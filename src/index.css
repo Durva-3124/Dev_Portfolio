@@ -3,15 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --accent:          #800020;
-  --accent-tint:     #c2274f;
-  --accent-secondary:#e0b878;
-  --bg-dark:         #0d0709;
-  --bg-light:        #fbf6f4;
-  --surface:         rgba(255, 255, 255, 0.04);
-  --border-glass:    rgba(194, 39, 79, 0.25);
-  --text-dark:       #f5efe9;
-  --text-light:      #1a0d10;
+  --gallery-bg:         #F2EFE7;
+  --gallery-wall:       #EEEAE1;
+  --gallery-wall-light: #F7F4ED;
+  --gallery-floor:      #D8D1C5;
+  --gallery-shadow:     #A9A197;
+  --gallery-dark:       #171717;
+  --gallery-text:       #181818;
+  --accent:             #800020;
 }
 
 *,
@@ -28,39 +27,24 @@ body,
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0d0709;
-  color: #f5efe9;
-  font-family: 'Inter', sans-serif;
+  background: #F2EFE7;
+  color: #181818;
+  font-family: "Helvetica Neue", Inter, Arial, sans-serif;
 }
 
-/* ── Utility classes kept for future phases ── */
-@layer components {
-  .glass {
-    background: var(--surface);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--border-glass);
-    border-radius: 1rem;
-  }
+/* Hide scrollbar globally — scroll is captured by wheel event */
+::-webkit-scrollbar { display: none; }
+* { scrollbar-width: none; }
 
-  .glass-card {
-    background: var(--surface);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--border-glass);
-    border-radius: 1rem;
-  }
-
-  .gradient-text {
-    background: linear-gradient(135deg, #800020 0%, #c2274f 50%, #e0b878 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
+canvas {
+  position: fixed;
+  inset: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  display: block;
 }
 
 ::selection {
-  background: var(--accent);
-  color: #ffffff;
+  background: #800020;
+  color: #fff;
 }

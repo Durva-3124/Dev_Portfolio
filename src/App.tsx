@@ -1,51 +1,53 @@
 import { Suspense } from 'react';
 import GalleryWorld from '@/gallery/GalleryWorld';
 
-// ─── Phase 1: Full-screen 3D gallery world ────────────────────────────────────
-// The existing portfolio sections (Hero, About, Skills, etc.) are preserved in
-// src/sections/ and will be integrated in Phase 6 as in-world content panels.
-// App.tsx is intentionally minimal for Phase 1.
-
 function LoadingScreen() {
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: '#0d0709',
+      background: '#F2EFE7',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'column',
-      gap: '1rem',
+      gap: '1.2rem',
     }}>
       <div style={{
-        width: 48,
+        width: 1,
         height: 48,
-        border: '2px solid rgba(224,184,120,0.15)',
-        borderTop: '2px solid #e0b878',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-      }} />
-      <p style={{
-        color: 'rgba(224,184,120,0.6)',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '0.75rem',
-        letterSpacing: '0.2em',
-        textTransform: 'uppercase',
+        background: 'rgba(24,24,24,0.15)',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        Loading world…
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '40%',
+          background: 'rgba(24,24,24,0.5)',
+          animation: 'loadPulse 1.4s ease-in-out infinite',
+        }} />
+      </div>
+      <p style={{
+        fontFamily: '"Helvetica Neue", Inter, Arial, sans-serif',
+        fontSize: 10,
+        letterSpacing: '0.28em',
+        textTransform: 'uppercase',
+        color: 'rgba(24,24,24,0.4)',
+      }}>
+        Loading
       </p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes loadPulse { 0%{transform:translateY(-100%)} 100%{transform:translateY(300%)} }`}</style>
     </div>
   );
 }
 
 export default function App() {
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
-      <Suspense fallback={<LoadingScreen />}>
-        <GalleryWorld />
-      </Suspense>
-    </div>
+    <Suspense fallback={<LoadingScreen />}>
+      <GalleryWorld />
+    </Suspense>
   );
 }

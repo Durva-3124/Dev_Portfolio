@@ -1,79 +1,28 @@
-import { LIGHT, SPACES } from './constants';
+import { useRef } from 'react';
+import { useHelper } from '@react-three/drei';
+import * as THREE from 'three';
+import { ARTWORKS } from './constants';
 
-// ─── Atrium skylight simulation ───────────────────────────────────────────────
-// Large area-like lights high in the atrium ceiling, warm neutral
-function AtriumSkyLights() {
-  const { h, cz } = SPACES.atrium;
-  const positions: [number, number, number][] = [
-    [-8,  h - 0.5, cz - 8],
-    [ 8,  h - 0.5, cz - 8],
-    [ 0,  h - 0.5, cz + 4],
-    [-6,  h - 0.5, cz + 10],
-    [ 6,  h - 0.5, cz + 10],
-  ];
+// ─── Artwork spotlights ───────────────────────────────────────────────────────
+function ArtworkSpotlight({
+  position,
+  targetPosition,
+}: {
+  position: [number, number, number];
+  targetPosition: [number, number, number];
+}) {
+  const targetRef = useRef<THREE.Object3D>(null);
   return (
     <>
-      {positions.map(([x, y, z], i) => (
-        <pointLight
-          key={i}
-          position={[x, y, z]}
-          color={LIGHT.warmWhite}
-          intensity={22}
-          distance={20}
-          decay={2}
-          castShadow={i === 0}
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
-          shadow-camera-near={0.5}
-          shadow-camera-far={22}
-          shadow-bias={-0.001}
-        />
-      ))}
-    </>
-  );
-}
-
-// ─── Exhibit spotlights — aimed at the three exhibit walls ───────────────────
-function ExhibitSpotlights() {
-  const { h, cz } = SPACES.atrium;
-  const hd = SPACES.atrium.d / 2;
-  const hw = SPACES.atrium.w / 2;
-
-  return (
-    <>
-      {/* Panoramic back wall */}
+      <object3D ref={targetRef} position={targetPosition} />
       <spotLight
-        position={[0, h - 1.5, cz - hd + 6]}
-        target-position={[0, 5.5, cz - hd + 0.5]}
-        color={LIGHT.warmWhite}
-        intensity={60}
-        angle={0.38}
-        penumbra={0.5}
-        distance={18}
-        decay={2}
-        castShadow={false}
-      />
-      {/* Portrait wall — left */}
-      <spotLight
-        position={[-hw + 5, h - 2, cz - 8]}
-        target-position={[-hw + 0.5, 5.5, cz - 8]}
-        color={LIGHT.warmWhite}
-        intensity={45}
-        angle={0.42}
-        penumbra={0.6}
-        distance={14}
-        decay={2}
-        castShadow={false}
-      />
-      {/* Secondary wall — right */}
-      <spotLight
-        position={[hw - 5, h - 2, cz + 4]}
-        target-position={[hw - 0.5, 4.5, cz + 4]}
-        color={LIGHT.warmWhite}
-        intensity={40}
-        angle={0.4}
-        penumbra={0.6}
-        distance={14}
+        position={position}
+        target={targetRef.current ?? undefined}
+        color={0xfff8f0}
+        intensity={35}
+        angle={0.35}
+        penumbra={0.7}
+        distance={12}
         decay={2}
         castShadow={false}
       />
@@ -81,156 +30,86 @@ function ExhibitSpotlights() {
   );
 }
 
-// ─── Burgundy accent — low wall wash ─────────────────────────────────────────
-function BurgundyAccents() {
-  const { cz } = SPACES.atrium;
+export default function GalleryLighting() {
   return (
     <>
-      {/* Left wall wash */}
-      <pointLight
-        position={[-14, 1.2, cz - 6]}
-        color={LIGHT.burgundy}
-        intensity={8}
-        distance={10}
-        decay={2}
+      {/* ── Hemisphere: sky warm white, ground warm grey ─────────────────── */}
+      <hemisphereLight
+        args={[0xfff8f0, 0xd8d1c5, 0.85]}
       />
-      {/* Right wall wash */}
-      <pointLight
-        position={[14, 1.2, cz + 2]}
-        color={LIGHT.burgundy}
-        intensity={8}
-        distance={10}
-        decay={2}
+
+      {/* ── Key directional — simulates high window / skylight ───────────── */}
+      <directionalLight
+        color={0xfff5e8}
+        intensity={1.4}
+        position={[8, 22, 12]}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={1}
+        shadow-camera-far={120}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={30}
+        shadow-camera-bottom={-30}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.02}
       />
-      {/* Back wall accent */}
+
+      {/* ── Fill from opposite side — softer, cooler ─────────────────────── */}
+      <directionalLight
+        color={0xf0f4ff}
+        intensity={0.35}
+        position={[-12, 10, -8]}
+        castShadow={false}
+      />
+
+      {/* ── Entrance vestibule — soft overhead ───────────────────────────── */}
       <pointLight
-        position={[0, 2.5, SPACES.atrium.cz - SPACES.atrium.d / 2 + 2]}
-        color={LIGHT.burgundy}
+        position={[0, 4.5, 22]}
+        color={0xfff8f0}
         intensity={12}
-        distance={12}
-        decay={2}
-      />
-    </>
-  );
-}
-
-// ─── Entrance hall lighting ───────────────────────────────────────────────────
-function EntranceLighting() {
-  const { cz, h } = SPACES.entrance;
-  return (
-    <>
-      <pointLight
-        position={[0, h - 0.5, cz]}
-        color={LIGHT.warmWhite}
-        intensity={14}
-        distance={12}
+        distance={14}
         decay={2}
         castShadow
         shadow-mapSize-width={256}
         shadow-mapSize-height={256}
         shadow-camera-near={0.2}
-        shadow-camera-far={12}
+        shadow-camera-far={14}
         shadow-bias={-0.002}
       />
-      {/* Subtle gold floor wash at entrance */}
-      <pointLight
-        position={[0, 0.3, cz + 2]}
-        color={LIGHT.gold}
-        intensity={3}
-        distance={6}
-        decay={2}
-      />
-    </>
-  );
-}
 
-// ─── Staircase lighting ───────────────────────────────────────────────────────
-function StairLighting() {
-  const { cx, startZ, endZ, startY, endY } = SPACES.stair;
-  const midZ = (startZ + endZ) / 2;
-  const midY = (startY + endY) / 2;
-  return (
-    <>
-      {/* Overhead stair light */}
-      <pointLight
-        position={[cx, midY + 4, midZ]}
-        color={LIGHT.warmWhite}
-        intensity={16}
-        distance={14}
-        decay={2}
-      />
-      {/* Gold glow from under steps */}
-      <pointLight
-        position={[cx, midY - 1, midZ + 2]}
-        color={LIGHT.stairGlow}
-        intensity={5}
-        distance={8}
-        decay={2}
-      />
-      {/* Landing light */}
-      <pointLight
-        position={[cx, endY + 2, endZ - 1]}
-        color={LIGHT.warmWhite}
-        intensity={10}
-        distance={8}
-        decay={2}
-      />
-    </>
-  );
-}
+      {/* ── Main gallery ground — two overhead fills ─────────────────────── */}
+      <pointLight position={[-2, 8, 4]}  color={0xfff8f0} intensity={18} distance={18} decay={2} />
+      <pointLight position={[ 2, 8, -8]} color={0xfff8f0} intensity={18} distance={18} decay={2} />
 
-// ─── Wing accent lights — visible through arches ──────────────────────────────
-function WingLights() {
-  return (
-    <>
-      <pointLight
-        position={[SPACES.leftWing.cx, 4, 0]}
-        color={LIGHT.gold}
-        intensity={10}
-        distance={12}
-        decay={2}
-      />
-      <pointLight
-        position={[SPACES.rightWing.cx, 4, 0]}
-        color={LIGHT.gold}
-        intensity={10}
-        distance={12}
-        decay={2}
-      />
-    </>
-  );
-}
+      {/* ── Stair hall overhead ───────────────────────────────────────────── */}
+      <pointLight position={[3, 11, -22]} color={0xfff8f0} intensity={22} distance={20} decay={2} castShadow={false} />
 
-// ─── Main export ──────────────────────────────────────────────────────────────
-export default function GalleryLighting() {
-  return (
-    <>
-      {/* Very soft global fill — keeps shadows from going pure black */}
-      <ambientLight color={LIGHT.ambient.color} intensity={LIGHT.ambient.intensity} />
+      {/* ── Stair under-step warm glow ────────────────────────────────────── */}
+      <pointLight position={[3, 1.5, -16]} color={0xffe8c0} intensity={6} distance={8} decay={2} />
+      <pointLight position={[3, 3.5, -20]} color={0xffe8c0} intensity={6} distance={8} decay={2} />
 
-      {/* Single key directional — establishes shadow direction */}
-      <directionalLight
-        color={LIGHT.key.color}
-        intensity={LIGHT.key.intensity}
-        position={[6, 18, 10]}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-camera-near={1}
-        shadow-camera-far={100}
-        shadow-camera-left={-30}
-        shadow-camera-right={30}
-        shadow-camera-top={30}
-        shadow-camera-bottom={-30}
-        shadow-bias={-0.0008}
+      {/* ── Upper gallery — bright, clean ────────────────────────────────── */}
+      <pointLight position={[0, 10.5, -32]} color={0xfff8f0} intensity={28} distance={22} decay={2} />
+      <pointLight position={[0, 10.5, -40]} color={0xfff8f0} intensity={28} distance={22} decay={2} />
+
+      {/* ── Artwork spotlights ────────────────────────────────────────────── */}
+      {/* meetsync-AI — left wall */}
+      <ArtworkSpotlight
+        position={[-6, 8, -2]}
+        targetPosition={[-9.2, 3.2, -2]}
       />
-
-      <AtriumSkyLights />
-      <ExhibitSpotlights />
-      <BurgundyAccents />
-      <EntranceLighting />
-      <StairLighting />
-      <WingLights />
+      {/* BullSight — right wall */}
+      <ArtworkSpotlight
+        position={[6, 8, -6]}
+        targetPosition={[9.2, 3.2, -6]}
+      />
+      {/* TejaLens — upper gallery back wall */}
+      <ArtworkSpotlight
+        position={[0, 11, -36]}
+        targetPosition={[0, 8.2, -40]}
+      />
     </>
   );
 }
