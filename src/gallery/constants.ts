@@ -16,7 +16,6 @@ export const C = {
   ceilingSoft: '#E8E4DB',
 } as const;
 
-// Three.js hex equivalents
 export const CH = {
   bg:        0xF2EFE7,
   wall:      0xEEEAE1,
@@ -28,122 +27,181 @@ export const CH = {
   accent:    0x800020,
 } as const;
 
-// ─── Camera path waypoints ────────────────────────────────────────────────────
-// The scroll-driven camera follows a CatmullRomCurve3 through these points.
-// Y = eye height above the floor at that point.
-// Scroll 0→1 maps to t=0→1 along the curve.
+// ─── Camera path ──────────────────────────────────────────────────────────────
+// Cinematically composed — camera is NEVER pointing at a blank wall.
+// Each position has a deliberate look target that reveals the next space.
+//
+// World layout (Z axis, negative = deeper):
+//   Z=30..14  Entrance corridor
+//   Z=14..6   Hero arch threshold
+//   Z=6..-14  Main gallery (artworks on X=-9.2 and X=+9.2)
+//   Z=-14..-30 Stair hall + staircase
+//   Z=-30..-46 Upper gallery (TejaLens at Z=-40, Y=8.2+5.2=13.4)
+//
+// Camera is offset from centre so it never travels dead-centre through rooms.
+
 export const PATH_POINTS: THREE.Vector3[] = [
-  new THREE.Vector3(  0,  1.68,  28),   // 0.00 — entrance, looking in
-  new THREE.Vector3(  0,  1.68,  20),   // 0.08 — mid entrance
-  new THREE.Vector3(  0,  1.68,  14),   // 0.16 — approach arch
-  new THREE.Vector3(  0,  1.68,   6),   // 0.24 — pass arch, gallery opens
-  new THREE.Vector3( -3,  1.68,  -2),   // 0.32 — drift left, see stair
-  new THREE.Vector3( -2,  1.68,  -8),   // 0.40 — stair approach
-  new THREE.Vector3(  4,  2.40,  -12),  // 0.48 — ascending stair (Y rises)
-  new THREE.Vector3(  6,  3.80,  -16),  // 0.56 — mid stair
-  new THREE.Vector3(  5,  5.20,  -20),  // 0.64 — upper landing
-  new THREE.Vector3(  2,  6.85,  -24),  // 0.72 — upper gallery floor
-  new THREE.Vector3( -2,  6.85,  -28),  // 0.80 — upper gallery, artwork ahead
-  new THREE.Vector3(  0,  6.85,  -34),  // 0.88 — approach featured artwork
-  new THREE.Vector3(  0,  6.85,  -38),  // 1.00 — final position
+  // 0.00 — start: slightly left of centre, outside arch, looking through it
+  new THREE.Vector3( -1.5,  1.70,  26),
+  // 0.08 — drift right, arch fills frame
+  new THREE.Vector3(  0.5,  1.70,  20),
+  // 0.16 — pass through arch threshold
+  new THREE.Vector3(  0.5,  1.70,  13),
+  // 0.24 — gallery opens, drift left toward left artwork
+  new THREE.Vector3( -2.5,  1.70,   5),
+  // 0.32 — left-of-centre, left artwork visible on wall
+  new THREE.Vector3( -3.5,  1.70,  -2),
+  // 0.40 — cross to right side, right artwork visible
+  new THREE.Vector3(  2.0,  1.70,  -8),
+  // 0.48 — approach stair, offset left so stair fills right frame
+  new THREE.Vector3( -1.5,  1.70, -13),
+  // 0.56 — ascending: camera rises with stair
+  new THREE.Vector3(  1.5,  2.80, -17),
+  // 0.64 — mid-stair, looking up toward landing
+  new THREE.Vector3(  3.0,  4.20, -21),
+  // 0.72 — upper landing, looking into upper gallery
+  new THREE.Vector3(  1.5,  6.90, -26),
+  // 0.80 — upper gallery, drift left
+  new THREE.Vector3( -1.5,  6.90, -31),
+  // 0.88 — approach TejaLens, centred
+  new THREE.Vector3(  0.0,  6.90, -36),
+  // 1.00 — final: comfortable viewing distance from TejaLens
+  new THREE.Vector3(  0.0,  6.90, -33),
 ];
 
-// Look-at targets paired with each path point
+// Look-at targets — deliberately ahead of and above camera position
+// so the camera always has a visual destination.
 export const LOOKAT_POINTS: THREE.Vector3[] = [
-  new THREE.Vector3(  0,  1.68,  20),
-  new THREE.Vector3(  0,  1.68,  12),
-  new THREE.Vector3(  0,  1.68,   4),
-  new THREE.Vector3( -2,  1.68,  -4),
-  new THREE.Vector3( -2,  1.68, -10),
-  new THREE.Vector3(  3,  2.20, -14),
-  new THREE.Vector3(  5,  3.50, -18),
-  new THREE.Vector3(  5,  5.00, -22),
-  new THREE.Vector3(  2,  6.50, -26),
-  new THREE.Vector3( -1,  6.85, -30),
-  new THREE.Vector3(  0,  6.85, -36),
-  new THREE.Vector3(  0,  6.85, -40),
-  new THREE.Vector3(  0,  6.85, -44),
+  // 0.00 — look through arch into gallery
+  new THREE.Vector3(  0.0,  2.20,  10),
+  // 0.08 — look at arch opening
+  new THREE.Vector3(  0.0,  3.50,   8),
+  // 0.16 — look into gallery, slight upward
+  new THREE.Vector3( -1.0,  2.20,   0),
+  // 0.24 — look toward left artwork on wall
+  new THREE.Vector3( -8.0,  3.20,  -2),
+  // 0.32 — look at left artwork directly
+  new THREE.Vector3( -9.2,  3.20,  -2),
+  // 0.40 — look toward right artwork
+  new THREE.Vector3(  9.2,  3.20,  -6),
+  // 0.48 — look up toward stair landing
+  new THREE.Vector3(  3.0,  4.50, -18),
+  // 0.56 — look up toward upper arch opening
+  new THREE.Vector3(  3.0,  5.50, -22),
+  // 0.64 — look toward upper gallery opening
+  new THREE.Vector3(  2.0,  7.20, -26),
+  // 0.72 — look into upper gallery, TejaLens hint
+  new THREE.Vector3(  0.0,  8.00, -34),
+  // 0.80 — look at TejaLens
+  new THREE.Vector3(  0.0,  8.20+5.20, -40),
+  // 0.88 — look at TejaLens centre
+  new THREE.Vector3(  0.0,  8.20+5.20, -40),
+  // 1.00 — look at TejaLens, comfortable framing
+  new THREE.Vector3(  0.0,  8.20+5.20, -40),
 ];
 
-// ─── Floor surfaces for Y-elevation ──────────────────────────────────────────
-// Each surface defines a rectangular region and its Y floor level.
-// The camera Y = surface.y + eyeHeight when inside that region.
+// ─── Floor surfaces ───────────────────────────────────────────────────────────
 export interface FloorSurface {
   minX: number; maxX: number;
   minZ: number; maxZ: number;
-  y: number;   // floor Y
+  y: number;
 }
 
-export const EYE_HEIGHT = 1.68;
+export const EYE_HEIGHT = 1.70;
+
+// Stair geometry: 12 steps, rise=0.18, depth=0.36
+// Flight 1: Z=-14 → Z=-18.32, Y=0→2.16
+// Landing:  Z=-18.32 → Z=-20, Y=2.16
+// Flight 2: Z=-20 → Z=-24.32, Y=2.16→4.32
+// Upper:    Y=5.20 (raised platform)
+const STAIR_RISE  = 0.18;
+const STAIR_DEPTH = 0.36;
+const STAIR_COUNT = 12;
 
 export const FLOOR_SURFACES: FloorSurface[] = [
-  // Ground floor — entrance + main gallery
   { minX: -20, maxX: 20, minZ: -14, maxZ: 32, y: 0 },
-  // Stair step surfaces (16 steps, each ~0.32 deep, ~0.18 high)
-  ...Array.from({ length: 16 }, (_, i) => ({
-    minX:  2,
-    maxX: 12,
-    minZ: -14 - i * 0.32,
-    maxZ: -14 - i * 0.32 + 0.32,
-    y:     i * 0.18,
+  ...Array.from({ length: STAIR_COUNT }, (_, i) => ({
+    minX:  -1, maxX: 10,
+    minZ: -14 - i * STAIR_DEPTH,
+    maxZ: -14 - i * STAIR_DEPTH + STAIR_DEPTH,
+    y:     i * STAIR_RISE,
   })),
-  // Upper landing
-  { minX: -2, maxX: 14, minZ: -20, maxZ: -14, y: 2.88 },
-  // Upper gallery floor
-  { minX: -16, maxX: 16, minZ: -46, maxZ: -20, y: 5.20 },
+  { minX: -2, maxX: 12, minZ: -20, maxZ: -14, y: STAIR_COUNT * STAIR_RISE },
+  ...Array.from({ length: STAIR_COUNT }, (_, i) => ({
+    minX:  -1, maxX: 10,
+    minZ: -20 - i * STAIR_DEPTH,
+    maxZ: -20 - i * STAIR_DEPTH + STAIR_DEPTH,
+    y:     STAIR_COUNT * STAIR_RISE + i * STAIR_RISE,
+  })),
+  { minX: -16, maxX: 16, minZ: -46, maxZ: -24, y: 5.20 },
 ];
 
-// ─── Project artwork positions ────────────────────────────────────────────────
+// ─── Artwork definitions ──────────────────────────────────────────────────────
 export interface ArtworkDef {
   id:       string;
   title:    string;
   role:     string;
   position: [number, number, number];
-  rotation: [number, number, number]; // Euler YXZ
+  rotation: [number, number, number];
   width:    number;
   height:   number;
   slug:     string;
 }
 
+// Artworks are on the walls, not floating.
+// Left wall X=-9.8 (wall inner face), right wall X=+9.8
+// Upper gallery back wall Z=-44.5 (wall inner face), floor Y=5.20
 export const ARTWORKS: ArtworkDef[] = [
   {
     id:       'meetsync-ai',
     title:    projects[0].title,
     role:     projects[0].role,
-    position: [-9.2, 3.2, -2],
+    position: [-9.8, 3.0, -2.0],
     rotation: [0, Math.PI / 2, 0],
-    width:    5.5,
-    height:   3.8,
+    width:    4.8,
+    height:   3.4,
     slug:     projects[0].slug,
   },
   {
     id:       'bullsight',
     title:    projects[1].title,
     role:     projects[1].role,
-    position: [9.2, 3.2, -6],
+    position: [9.8, 3.0, -6.0],
     rotation: [0, -Math.PI / 2, 0],
-    width:    5.5,
-    height:   3.8,
+    width:    4.8,
+    height:   3.4,
     slug:     projects[1].slug,
   },
   {
     id:       'tejalens',
     title:    projects[2].title,
     role:     projects[2].role,
-    position: [0, 8.2, -40],
+    // Upper gallery: floor Y=5.20, artwork centre at Y=5.20+3.0=8.20
+    position: [0, 5.20 + 3.0, -44.5],
     rotation: [0, 0, 0],
-    width:    7.0,
-    height:   4.5,
+    width:    6.0,
+    height:   4.2,
     slug:     projects[2].slug,
   },
 ];
 
 // ─── Camera config ────────────────────────────────────────────────────────────
 export const CAM = {
-  fov:          50,
-  near:         0.05,
+  fov:          52,
+  near:         0.08,
   far:          160,
-  scrollDamp:   0.06,   // how fast scroll progress catches up
-  parallaxAmt:  0.018,  // mouse parallax strength
-  approachDist: 4.5,    // distance at which artwork interaction activates
+  scrollDamp:   0.055,
+  parallaxAmt:  0.014,
+  // Approach stops 2.8 units in front of artwork — frame fills ~75% of viewport
+  approachDist: 2.8,
+} as const;
+
+// Stair geometry constants — exported so Architecture can use them
+export const STAIR = {
+  rise:    STAIR_RISE,
+  depth:   STAIR_DEPTH,
+  count:   STAIR_COUNT,
+  width:   8.0,
+  offsetX: 3.0,   // centre X of staircase
+  startZ:  -14.0, // Z where first step begins
 } as const;

@@ -259,7 +259,7 @@ export default function GalleryWorld() {
           alpha: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.08,
+          toneMappingExposure: 0.95,
         }}
         dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
         camera={{ fov: CAM.fov, near: CAM.near, far: CAM.far }}
