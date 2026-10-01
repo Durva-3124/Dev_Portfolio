@@ -5,24 +5,13 @@ import { experience } from '@/data';
 
 const containerVariants = {
   hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.15,
-    },
-  },
-};
+  visible: { transition: { staggerChildren: 0.15 } },
+} as const;
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: 'easeOut',
-    },
-  },
-};
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' as const } },
+} as const;
 
 export function Experience() {
   return (
@@ -44,7 +33,7 @@ export function Experience() {
           <Timeline>
             {experience.map((exp, index) => (
               <motion.div key={index} variants={itemVariants}>
-                <GlassCard className="p-6 mb-8 relative glass-hover" hoverable>
+                <GlassCard className="p-6 mb-8 glass-hover" hoverable>
                   <h3 className="text-xl font-bold text-accentTint mb-1">{exp.role}</h3>
                   <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                     <span className="font-semibold text-accentSecondary">{exp.company}</span>

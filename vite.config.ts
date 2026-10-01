@@ -16,9 +16,9 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three', '@react-three/fiber', '@react-three/drei'],
-          motion: ['framer-motion'],
+        manualChunks(id) {
+          if (id.includes('three') || id.includes('@react-three')) return 'three';
+          if (id.includes('framer-motion')) return 'motion';
         },
       },
     },

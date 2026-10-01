@@ -1,10 +1,9 @@
-import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { FiGithub, FiLinkedin, FiMapPin, FiChevronDown } from 'react-icons/fi';
 import MagneticButton from '@/components/ui/MagneticButton';
 import SceneCanvas from '@/three/SceneCanvas';
-import SceneFallback from '@/three/SceneFallback';
 import Hero3DScene from '@/three/Hero3DScene';
+import ParticleStarfield from '@/three/ParticleStarfield';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { hero } from '@/data';
 import { useTypewriter } from '@/hooks/useTypewriter';
@@ -28,7 +27,9 @@ export default function Hero() {
             {hero.name}
           </h1>
           <div className="h-10 flex items-center">
-            <span className="text-2xl text-accent-secondary font-heading">{role}<span className="animate-pulse">|</span></span>
+            <span className="text-2xl text-accent-secondary font-heading">
+              {role}<span className="animate-pulse">|</span>
+            </span>
           </div>
           {hero.oneLiner && (
             <p className="text-white/70 text-lg max-w-md leading-relaxed">{hero.oneLiner}</p>
@@ -58,16 +59,13 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        {/* 3D column */}
+        {/* 3D column — SceneCanvas handles WebGL check + reduced motion internally */}
         <div className="order-1 md:order-2 h-[420px] md:h-[520px] w-full">
-          {reduced ? (
-            <SceneFallback />
-          ) : (
-            <Suspense fallback={<SceneFallback />}>
-              <SceneCanvas>
-                <Hero3DScene />
-              </SceneCanvas>
-            </Suspense>
+          {!reduced && (
+            <SceneCanvas>
+              <Hero3DScene />
+              <ParticleStarfield />
+            </SceneCanvas>
           )}
         </div>
       </div>

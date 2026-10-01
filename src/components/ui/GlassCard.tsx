@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { forwardRef, type ReactNode } from 'react';
 
 interface GlassCardProps {
   children: ReactNode;
@@ -6,16 +6,17 @@ interface GlassCardProps {
   hoverable?: boolean;
 }
 
-export function GlassCard({ children, className = '', hoverable = false }: GlassCardProps) {
-  return (
+const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
+  ({ children, className = '', hoverable = false }, ref) => (
     <div
-      className={`glass rounded-2xl transition-all duration-300 ${
-        hoverable ? 'glass-hover cursor-pointer' : ''
-      } ${className}`}
+      ref={ref}
+      className={`glass rounded-2xl transition-all duration-300 ${hoverable ? 'glass-hover cursor-pointer' : ''} ${className}`}
     >
       {children}
     </div>
-  );
-}
+  )
+);
 
+GlassCard.displayName = 'GlassCard';
 export default GlassCard;
+export { GlassCard };

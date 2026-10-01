@@ -1,4 +1,4 @@
-import { useRef, ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 interface Props { children: ReactNode; className?: string; }
@@ -11,6 +11,11 @@ export default function TiltCard({ children, className = '' }: Props) {
   const rotateY = useTransform(x, [-0.5, 0.5], [-12, 12]);
   const glareX = useTransform(x, [-0.5, 0.5], ['0%', '100%']);
   const glareY = useTransform(y, [-0.5, 0.5], ['0%', '100%']);
+  const glareBg = useTransform(
+    [glareX, glareY],
+    ([gx, gy]: string[]) =>
+      `radial-gradient(circle at ${gx} ${gy}, rgba(255,255,255,0.18) 0%, transparent 60%)`
+  );
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = ref.current!.getBoundingClientRect();
@@ -29,11 +34,7 @@ export default function TiltCard({ children, className = '' }: Props) {
       {children}
       <motion.div
         className="pointer-events-none absolute inset-0 rounded-xl"
-        style={{
-          background: useTransform([glareX, glareY], ([gx, gy]) =>
-            `radial-gradient(circle at ${gx} ${gy}, rgba(255,255,255,0.18) 0%, transparent 60%)`
-          ),
-        }}
+        style={{ background: glareBg }}
       />
     </motion.div>
   );

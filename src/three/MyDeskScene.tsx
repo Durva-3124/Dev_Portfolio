@@ -11,7 +11,7 @@ function SteamParticle({ offset }: { offset: number }) {
     if (!ref.current) return;
     const t = (clock.getElapsedTime() * 0.4 + offset) % 1;
     ref.current.position.y = 0.3 + t * 0.6;
-    ref.current.material.opacity = 0.4 * (1 - t);
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.4 * (1 - t);
   });
   return (
     <mesh ref={ref} position={[0, 0.3, 0]}>
@@ -26,7 +26,7 @@ export default function MyDeskScene({ onObjectClick }: Props) {
 
   return (
     <group position={[0, -0.5, 0]}>
-      {/* Desk surface */}
+      {/* Desk */}
       <mesh position={[0, 0, 0]} receiveShadow>
         <boxGeometry args={[5, 0.12, 2.5]} />
         <meshStandardMaterial color="#5c3d2e" roughness={0.8} />
@@ -53,7 +53,7 @@ export default function MyDeskScene({ onObjectClick }: Props) {
         </mesh>
         {hovered === 'laptop' && (
           <Html position={[0, 0.9, 0]} center>
-            <div className="text-accent-tint text-xs bg-surface/80 px-2 py-1 rounded pointer-events-none">Click me!</div>
+            <div style={{ color: '#c2274f', fontSize: 12, background: 'rgba(13,7,9,0.8)', padding: '2px 8px', borderRadius: 4, pointerEvents: 'none' }}>Click me!</div>
           </Html>
         )}
       </group>

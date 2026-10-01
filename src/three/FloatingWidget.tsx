@@ -15,12 +15,12 @@ const sectionQuotes: Record<string, string> = {
 export default function FloatingWidget() {
   const [minimized, setMinimized] = useState(false);
   const [bubble, setBubble] = useState<string | null>(null);
-  const activeSection = useActiveSection();
+  const { activeSectionId } = useActiveSection();
   const reduced = useReducedMotion();
 
   const handleAvatarClick = () => {
     if (reduced) return;
-    const quote = sectionQuotes[activeSection] ??
+    const quote = sectionQuotes[activeSectionId] ??
       personal.avatarQuotes[Math.floor(Math.random() * personal.avatarQuotes.length)];
     setBubble(quote);
   };
@@ -39,7 +39,7 @@ export default function FloatingWidget() {
             {bubble && <SpeechBubble text={bubble} onDismiss={() => setBubble(null)} />}
             <Suspense fallback={null}>
               <SceneCanvas>
-                <Avatar section={activeSection} />
+                <Avatar section={activeSectionId} />
               </SceneCanvas>
             </Suspense>
           </motion.div>

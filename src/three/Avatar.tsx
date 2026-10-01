@@ -7,19 +7,30 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export type AvatarPose = 'idle' | 'wave' | 'type' | 'badge' | 'point' | 'thumbsup' | 'shrug';
 
+const sectionPoseMap: Record<string, AvatarPose> = {
+  about: 'wave',
+  skills: 'type',
+  experience: 'badge',
+  projects: 'point',
+  contact: 'thumbsup',
+};
+
 interface AvatarProps {
   onSpeak?: (quote: string) => void;
   onClickAvatar?: () => void;
   small?: boolean;
   pose?: AvatarPose;
+  section?: string;
 }
 
 function ProceduralAvatar({
   onSpeak,
   onClickAvatar,
   small = false,
-  pose = 'idle',
+  pose: poseProp = 'idle',
+  section,
 }: AvatarProps) {
+  const pose: AvatarPose = section ? (sectionPoseMap[section] ?? 'idle') : poseProp;
   const groupRef = useRef<THREE.Group>(null);
   const headGroupRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Mesh>(null);

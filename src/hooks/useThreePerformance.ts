@@ -7,24 +7,16 @@ export function useIsMobile(): boolean {
   }, []);
 }
 
-export function usePerformance(): {
-  particleCount: number;
-  dpr: [number, number];
-  polygonBudget: number;
-} {
+// alias used by ParticleStarfield
+export function useThreePerformance() {
+  const isMobile = useIsMobile();
+  return { isMobile };
+}
+
+export function usePerformance() {
   const isMobile = useIsMobile();
   return useMemo(() => {
-    if (isMobile) {
-      return {
-        particleCount: 500,
-        dpr: [1, 1.5],
-        polygonBudget: 5000,
-      };
-    }
-    return {
-      particleCount: 2000,
-      dpr: [1, 2],
-      polygonBudget: 20000,
-    };
+    if (isMobile) return { particleCount: 500, dpr: [1, 1.5] as [number, number], polygonBudget: 5000 };
+    return { particleCount: 2000, dpr: [1, 2] as [number, number], polygonBudget: 20000 };
   }, [isMobile]);
 }
