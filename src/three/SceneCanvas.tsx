@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useRef, useState, type FC } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Suspense, useRef, useState, type FC } from 'react';
+import { Canvas } from '@react-three/fiber';
 import useReducedMotion from '@/hooks/useReducedMotion';
 import SceneFallback from './SceneFallback';
 import Lights from './Lights';
@@ -9,77 +9,20 @@ interface SceneCanvasProps {
   className?: string;
   height?: string;
   dprLimit?: number;
-  fallbackMessage?: string;
 }
 
 function detectWebgl(): boolean {
   if (typeof document === 'undefined') return true;
   try {
     const canvas = document.createElement('canvas');
-    const gl =
-      canvas.getContext('webgl2') ||
-      canvas.getContext('webgl') ||
-      canvas.getContext('experimental-webgl');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
     return !!gl;
   } catch {
     return false;
   }
 }
 
-function VisibilityController(): null {
-  const { performance } = useThree();
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    let canvas: HTMLCanvasElement | null = null;
-    const findCanvas = () => {
-      const c = document.querySelector('canvas');
-      if (c) {
-        canvas = c as HTMLCanvasElement;
-        wrapperRef.current = canvas.parentElement;
-      }
-    };
-    findCanvas();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          performance.minimize = !entry.isIntersecting;
-        }
-      },
-      { threshold: 0 },
-    );
-
-    const target = wrapperRef.current ?? canvas;
-    if (target) {
-      observer.observe(target);
-    } else {
-      const timeout = setTimeout(() => {
-        findCanvas();
-        const t = wrapperRef.current ?? canvas;
-        if (t) observer.observe(t);
-      }, 100);
-      return () => {
-        clearTimeout(timeout);
-        observer.disconnect();
-      };
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [performance]);
-
-  return null;
-}
-
-const SceneCanvas: FC<SceneCanvasProps> = ({
-  children,
-  className,
-  height,
-  dprLimit = 2,
-  fallbackMessage: _fallbackMessage,
-}) => {
+const SceneCanvas: FC<SceneCanvasProps> = ({ children, className, height, dprLimit = 2 }) => {
   const reducedMotion = useReducedMotion();
   const [webglSupported] = useState(detectWebgl);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -100,7 +43,6 @@ const SceneCanvas: FC<SceneCanvasProps> = ({
         camera={{ position: [0, 0, 5], fov: 45 }}
         style={{ height: '100%', width: '100%' }}
       >
-        <VisibilityController />
         <Suspense fallback={null}>
           <Lights />
           {children}

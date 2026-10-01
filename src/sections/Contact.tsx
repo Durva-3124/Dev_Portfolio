@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { FiMail, FiGithub, FiLinkedin } from 'react-icons/fi';
 import { contact } from '@/data';
@@ -48,7 +48,6 @@ export default function Contact() {
         </motion.div>
 
         <div className="grid md:grid-cols-2 gap-12">
-          {/* Form */}
           <motion.form
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -58,41 +57,26 @@ export default function Contact() {
             noValidate
           >
             <div>
-              <input
-                type="text"
-                placeholder="Your name"
-                {...field('name')}
-                className="w-full px-4 py-3 bg-surface/50 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors"
-              />
+              <input type="text" placeholder="Your name" {...field('name')}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors" />
               {errors.name && <p className="text-accent-tint text-xs mt-1">{errors.name}</p>}
             </div>
             <div>
-              <input
-                type="email"
-                placeholder="Your email"
-                {...field('email')}
-                className="w-full px-4 py-3 bg-surface/50 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors"
-              />
+              <input type="email" placeholder="Your email" {...field('email')}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors" />
               {errors.email && <p className="text-accent-tint text-xs mt-1">{errors.email}</p>}
             </div>
             <div>
-              <textarea
-                rows={5}
-                placeholder="Your message"
-                {...field('message')}
-                className="w-full px-4 py-3 bg-surface/50 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors resize-none"
-              />
+              <textarea rows={5} placeholder="Your message" {...field('message')}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-white/30 focus:outline-none focus:border-accent-tint transition-colors resize-none" />
               {errors.message && <p className="text-accent-tint text-xs mt-1">{errors.message}</p>}
             </div>
-            <button
-              type="submit"
-              className="w-full py-3 bg-accent hover:bg-accent-tint text-white font-semibold rounded-lg transition-colors"
-            >
+            <button type="submit"
+              className="w-full py-3 bg-accent hover:bg-accent-tint text-white font-semibold rounded-lg transition-colors">
               Send Message
             </button>
           </motion.form>
 
-          {/* Sidebar */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}

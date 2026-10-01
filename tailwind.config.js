@@ -6,11 +6,14 @@ export default {
     extend: {
       colors: {
         accent: '#800020',
+        'accent-tint': '#c2274f',
+        'accent-secondary': '#e0b878',
         accentTint: '#c2274f',
         accentSecondary: '#e0b878',
         backgroundDark: '#0d0709',
         backgroundLight: '#fbf6f4',
         surface: 'rgba(255,255,255,0.04)',
+        background: '#0d0709',
         textLight: '#1a0d10',
         textDark: '#f5efe9'
       },

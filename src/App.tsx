@@ -1,52 +1,53 @@
-import { Fragment } from 'react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import ScrollProgress from '@/components/layout/ScrollProgress';
-import CustomCursor from '@/components/ui/CustomCursor';
-import Preloader from '@/components/ui/Preloader';
-import FloatingWidget from '@/three/FloatingWidget';
-import Hero from '@/sections/Hero';
-import About from '@/sections/About';
-import Skills from '@/sections/Skills';
-import Experience from '@/sections/Experience';
-import MyDesk from '@/sections/MyDesk';
-import Projects from '@/sections/Projects';
-import Education from '@/sections/Education';
-import Certifications from '@/sections/Certifications';
-import BeyondCode from '@/sections/BeyondCode';
-import Contact from '@/sections/Contact';
-import { useSmoothScroll } from '@/hooks/useSmoothScroll';
-import { useTheme } from '@/hooks/useTheme';
-import { useKonami } from '@/hooks/useKonami';
-import confetti from 'canvas-confetti';
+import { Suspense } from 'react';
+import GalleryWorld from '@/gallery/GalleryWorld';
 
-function App() {
-  useSmoothScroll();
-  useTheme();
-  useKonami(() => confetti({ colors: ['#800020', '#e0b878'], particleCount: 120, spread: 80 }));
-
+function LoadingScreen() {
   return (
-    <Fragment>
-      <Preloader />
-      <CustomCursor />
-      <ScrollProgress />
-      <Navbar />
-      <main>
-        <Hero />
-        <About />
-        <Skills />
-        <Experience />
-        <MyDesk />
-        <Projects />
-        <Education />
-        <Certifications />
-        <BeyondCode />
-        <Contact />
-      </main>
-      <Footer />
-      <FloatingWidget />
-    </Fragment>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: '#F2EFE7',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: '1.2rem',
+    }}>
+      <div style={{
+        width: 1,
+        height: 48,
+        background: 'rgba(24,24,24,0.15)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '40%',
+          background: 'rgba(24,24,24,0.5)',
+          animation: 'loadPulse 1.4s ease-in-out infinite',
+        }} />
+      </div>
+      <p style={{
+        fontFamily: '"Helvetica Neue", Inter, Arial, sans-serif',
+        fontSize: 10,
+        letterSpacing: '0.28em',
+        textTransform: 'uppercase',
+        color: 'rgba(24,24,24,0.4)',
+      }}>
+        Loading
+      </p>
+      <style>{`@keyframes loadPulse { 0%{transform:translateY(-100%)} 100%{transform:translateY(300%)} }`}</style>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <GalleryWorld />
+    </Suspense>
+  );
+}
