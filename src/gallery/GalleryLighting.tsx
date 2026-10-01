@@ -1,157 +1,236 @@
-import { useMemo } from 'react';
-import * as THREE from 'three';
-import { COLORS, ROOM } from './constants';
+import { LIGHT, SPACES } from './constants';
 
-// Ceiling pendant lights spaced along the hall
-function PendantLights() {
-  const positions = useMemo<[number, number, number][]>(() => {
-    const pts: [number, number, number][] = [];
-    const zSteps = [-22, -14, -6, 2, 10, 18];
-    for (const z of zSteps) {
-      pts.push([0, ROOM.height - 0.3, z]);
-    }
-    return pts;
-  }, []);
-
+// ─── Atrium skylight simulation ───────────────────────────────────────────────
+// Large area-like lights high in the atrium ceiling, warm neutral
+function AtriumSkyLights() {
+  const { h, cz } = SPACES.atrium;
+  const positions: [number, number, number][] = [
+    [-8,  h - 0.5, cz - 8],
+    [ 8,  h - 0.5, cz - 8],
+    [ 0,  h - 0.5, cz + 4],
+    [-6,  h - 0.5, cz + 10],
+    [ 6,  h - 0.5, cz + 10],
+  ];
   return (
     <>
       {positions.map(([x, y, z], i) => (
-        <group key={i} position={[x, y, z]}>
-          {/* Visible pendant geometry */}
-          <mesh castShadow>
-            <sphereGeometry args={[0.12, 8, 8]} />
-            <meshStandardMaterial
-              color={COLORS.warmWhite}
-              emissive={new THREE.Color(COLORS.warmWhite)}
-              emissiveIntensity={2.5}
-              roughness={0.1}
-              metalness={0.4}
-            />
-          </mesh>
-          {/* Actual light */}
-          <pointLight
-            color={COLORS.warmWhite}
-            intensity={18}
-            distance={14}
-            decay={2}
-            castShadow
-            shadow-mapSize-width={256}
-            shadow-mapSize-height={256}
-            shadow-camera-near={0.1}
-            shadow-camera-far={14}
-          />
-        </group>
+        <pointLight
+          key={i}
+          position={[x, y, z]}
+          color={LIGHT.warmWhite}
+          intensity={22}
+          distance={20}
+          decay={2}
+          castShadow={i === 0}
+          shadow-mapSize-width={512}
+          shadow-mapSize-height={512}
+          shadow-camera-near={0.5}
+          shadow-camera-far={22}
+          shadow-bias={-0.001}
+        />
       ))}
     </>
   );
 }
 
-// Burgundy accent wall sconces
-function WallSconces() {
-  const hw = ROOM.width / 2 - 0.6;
-  const zPositions = [-20, -10, 0, 10, 20];
-  const sconceMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: COLORS.accentTint,
-        emissive: new THREE.Color(COLORS.accentTint),
-        emissiveIntensity: 1.2,
-        roughness: 0.2,
-        metalness: 0.6,
-      }),
-    []
-  );
+// ─── Exhibit spotlights — aimed at the three exhibit walls ───────────────────
+function ExhibitSpotlights() {
+  const { h, cz } = SPACES.atrium;
+  const hd = SPACES.atrium.d / 2;
+  const hw = SPACES.atrium.w / 2;
 
   return (
     <>
-      {zPositions.map((z) => (
-        <group key={z}>
-          {/* Left sconce */}
-          <group position={[-hw, 3.2, z]}>
-            <mesh castShadow>
-              <boxGeometry args={[0.08, 0.22, 0.22]} />
-              <primitive object={sconceMat} attach="material" />
-            </mesh>
-            <pointLight
-              color={COLORS.accentTint}
-              intensity={4}
-              distance={5}
-              decay={2}
-            />
-          </group>
-          {/* Right sconce */}
-          <group position={[hw, 3.2, z]}>
-            <mesh castShadow>
-              <boxGeometry args={[0.08, 0.22, 0.22]} />
-              <primitive object={sconceMat} attach="material" />
-            </mesh>
-            <pointLight
-              color={COLORS.accentTint}
-              intensity={4}
-              distance={5}
-              decay={2}
-            />
-          </group>
-        </group>
-      ))}
+      {/* Panoramic back wall */}
+      <spotLight
+        position={[0, h - 1.5, cz - hd + 6]}
+        target-position={[0, 5.5, cz - hd + 0.5]}
+        color={LIGHT.warmWhite}
+        intensity={60}
+        angle={0.38}
+        penumbra={0.5}
+        distance={18}
+        decay={2}
+        castShadow={false}
+      />
+      {/* Portrait wall — left */}
+      <spotLight
+        position={[-hw + 5, h - 2, cz - 8]}
+        target-position={[-hw + 0.5, 5.5, cz - 8]}
+        color={LIGHT.warmWhite}
+        intensity={45}
+        angle={0.42}
+        penumbra={0.6}
+        distance={14}
+        decay={2}
+        castShadow={false}
+      />
+      {/* Secondary wall — right */}
+      <spotLight
+        position={[hw - 5, h - 2, cz + 4]}
+        target-position={[hw - 0.5, 4.5, cz + 4]}
+        color={LIGHT.warmWhite}
+        intensity={40}
+        angle={0.4}
+        penumbra={0.6}
+        distance={14}
+        decay={2}
+        castShadow={false}
+      />
     </>
   );
 }
 
-// Gold floor-level accent strip lights
-function FloorAccentLights() {
-  const hw = ROOM.width / 2 - 0.3;
-  const zPositions = [-22, -12, -2, 8, 18];
+// ─── Burgundy accent — low wall wash ─────────────────────────────────────────
+function BurgundyAccents() {
+  const { cz } = SPACES.atrium;
   return (
     <>
-      {zPositions.map((z) => (
-        <group key={z}>
-          <pointLight
-            position={[-hw, 0.15, z]}
-            color={COLORS.accentSecondary}
-            intensity={2.5}
-            distance={4}
-            decay={2}
-          />
-          <pointLight
-            position={[hw, 0.15, z]}
-            color={COLORS.accentSecondary}
-            intensity={2.5}
-            distance={4}
-            decay={2}
-          />
-        </group>
-      ))}
+      {/* Left wall wash */}
+      <pointLight
+        position={[-14, 1.2, cz - 6]}
+        color={LIGHT.burgundy}
+        intensity={8}
+        distance={10}
+        decay={2}
+      />
+      {/* Right wall wash */}
+      <pointLight
+        position={[14, 1.2, cz + 2]}
+        color={LIGHT.burgundy}
+        intensity={8}
+        distance={10}
+        decay={2}
+      />
+      {/* Back wall accent */}
+      <pointLight
+        position={[0, 2.5, SPACES.atrium.cz - SPACES.atrium.d / 2 + 2]}
+        color={LIGHT.burgundy}
+        intensity={12}
+        distance={12}
+        decay={2}
+      />
     </>
   );
 }
 
+// ─── Entrance hall lighting ───────────────────────────────────────────────────
+function EntranceLighting() {
+  const { cz, h } = SPACES.entrance;
+  return (
+    <>
+      <pointLight
+        position={[0, h - 0.5, cz]}
+        color={LIGHT.warmWhite}
+        intensity={14}
+        distance={12}
+        decay={2}
+        castShadow
+        shadow-mapSize-width={256}
+        shadow-mapSize-height={256}
+        shadow-camera-near={0.2}
+        shadow-camera-far={12}
+        shadow-bias={-0.002}
+      />
+      {/* Subtle gold floor wash at entrance */}
+      <pointLight
+        position={[0, 0.3, cz + 2]}
+        color={LIGHT.gold}
+        intensity={3}
+        distance={6}
+        decay={2}
+      />
+    </>
+  );
+}
+
+// ─── Staircase lighting ───────────────────────────────────────────────────────
+function StairLighting() {
+  const { cx, startZ, endZ, startY, endY } = SPACES.stair;
+  const midZ = (startZ + endZ) / 2;
+  const midY = (startY + endY) / 2;
+  return (
+    <>
+      {/* Overhead stair light */}
+      <pointLight
+        position={[cx, midY + 4, midZ]}
+        color={LIGHT.warmWhite}
+        intensity={16}
+        distance={14}
+        decay={2}
+      />
+      {/* Gold glow from under steps */}
+      <pointLight
+        position={[cx, midY - 1, midZ + 2]}
+        color={LIGHT.stairGlow}
+        intensity={5}
+        distance={8}
+        decay={2}
+      />
+      {/* Landing light */}
+      <pointLight
+        position={[cx, endY + 2, endZ - 1]}
+        color={LIGHT.warmWhite}
+        intensity={10}
+        distance={8}
+        decay={2}
+      />
+    </>
+  );
+}
+
+// ─── Wing accent lights — visible through arches ──────────────────────────────
+function WingLights() {
+  return (
+    <>
+      <pointLight
+        position={[SPACES.leftWing.cx, 4, 0]}
+        color={LIGHT.gold}
+        intensity={10}
+        distance={12}
+        decay={2}
+      />
+      <pointLight
+        position={[SPACES.rightWing.cx, 4, 0]}
+        color={LIGHT.gold}
+        intensity={10}
+        distance={12}
+        decay={2}
+      />
+    </>
+  );
+}
+
+// ─── Main export ──────────────────────────────────────────────────────────────
 export default function GalleryLighting() {
   return (
     <>
-      {/* Global ambient — very dim, sets the dark mood */}
-      <ambientLight color={COLORS.warmWhite} intensity={0.18} />
+      {/* Very soft global fill — keeps shadows from going pure black */}
+      <ambientLight color={LIGHT.ambient.color} intensity={LIGHT.ambient.intensity} />
 
-      {/* Single soft directional for overall shadow direction */}
+      {/* Single key directional — establishes shadow direction */}
       <directionalLight
-        color={COLORS.warmWhite}
-        intensity={0.6}
-        position={[4, 12, 8]}
+        color={LIGHT.key.color}
+        intensity={LIGHT.key.intensity}
+        position={[6, 18, 10]}
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
-        shadow-camera-near={0.5}
-        shadow-camera-far={80}
-        shadow-camera-left={-20}
-        shadow-camera-right={20}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-        shadow-bias={-0.001}
+        shadow-camera-near={1}
+        shadow-camera-far={100}
+        shadow-camera-left={-30}
+        shadow-camera-right={30}
+        shadow-camera-top={30}
+        shadow-camera-bottom={-30}
+        shadow-bias={-0.0008}
       />
 
-      <PendantLights />
-      <WallSconces />
-      <FloorAccentLights />
+      <AtriumSkyLights />
+      <ExhibitSpotlights />
+      <BurgundyAccents />
+      <EntranceLighting />
+      <StairLighting />
+      <WingLights />
     </>
   );
 }

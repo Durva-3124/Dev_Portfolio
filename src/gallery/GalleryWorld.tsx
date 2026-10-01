@@ -1,153 +1,76 @@
-import { Suspense, useRef, useState, useCallback } from 'react';
+import { Suspense, useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CAMERA, COLORS, FOG } from './constants';
+import { CAMERA, FOG } from './constants';
 import GalleryArchitecture from './GalleryArchitecture';
-import GalleryLighting from './GalleryLighting';
-import PlayerController from './PlayerController';
+import GalleryLighting     from './GalleryLighting';
+import PlayerController    from './PlayerController';
 
-// ─── Scene inner (needs useThree) ────────────────────────────────────────────
 function SceneSetup() {
   return (
     <>
-      <fog attach="fog" args={[COLORS.fogColor, FOG.near, FOG.far]} />
-      <color attach="background" args={[COLORS.bg]} />
+      <fog attach="fog" args={[FOG.color, FOG.near, FOG.far]} />
+      <color attach="background" args={[0x0d0b0a]} />
     </>
   );
 }
 
-// ─── Click-to-enter overlay ───────────────────────────────────────────────────
-function ClickOverlay({ locked }: { locked: boolean }) {
+// Minimal, non-game overlay — only shown before pointer lock
+function ExplorePrompt({ locked }: { locked: boolean }) {
   if (locked) return null;
   return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
+    <div style={{
+      position: 'absolute',
+      bottom: '2.5rem',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '0.4rem',
+      pointerEvents: 'none',
+      userSelect: 'none',
+      zIndex: 10,
+    }}>
+      <div style={{
+        width: 36,
+        height: 36,
+        border: '1px solid rgba(200,169,110,0.5)',
+        borderRadius: '50%',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(13,7,9,0.55)',
-        backdropFilter: 'blur(2px)',
-        zIndex: 10,
-        pointerEvents: 'none',
-        userSelect: 'none',
-      }}
-    >
+      }}>
+        {/* Simple cursor icon */}
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2L12 7L7 8L5 12L2 2Z"
+            fill="rgba(200,169,110,0.8)" />
+        </svg>
+      </div>
       <p style={{
-        color: '#e0b878',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '0.85rem',
-        letterSpacing: '0.2em',
+        color: 'rgba(200,169,110,0.7)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '0.7rem',
+        letterSpacing: '0.18em',
         textTransform: 'uppercase',
-        opacity: 0.9,
       }}>
         Click to explore
       </p>
       <p style={{
-        color: 'rgba(245,239,233,0.4)',
-        fontFamily: 'Inter, sans-serif',
-        fontSize: '0.72rem',
-        letterSpacing: '0.15em',
-        marginTop: '0.5rem',
+        color: 'rgba(245,239,233,0.28)',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: '0.62rem',
+        letterSpacing: '0.1em',
       }}>
-        W A S D · Mouse look · Shift to sprint
+        W A S D &nbsp;·&nbsp; Mouse look
       </p>
     </div>
   );
 }
 
-// ─── HUD controls hint ────────────────────────────────────────────────────────
-function HUD({ locked }: { locked: boolean }) {
-  if (!locked) return null;
-  return (
-    <div style={{
-      position: 'absolute',
-      bottom: '1.5rem',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      display: 'flex',
-      gap: '1.5rem',
-      zIndex: 10,
-      pointerEvents: 'none',
-    }}>
-      {[
-        { key: 'W', label: 'Forward' },
-        { key: 'A', label: 'Left' },
-        { key: 'S', label: 'Back' },
-        { key: 'D', label: 'Right' },
-        { key: 'Shift', label: 'Sprint' },
-        { key: 'Esc', label: 'Release' },
-      ].map(({ key, label }) => (
-        <div key={key} style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0.2rem',
-        }}>
-          <span style={{
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(224,184,120,0.3)',
-            borderRadius: '4px',
-            padding: '2px 8px',
-            color: '#e0b878',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '0.7rem',
-            letterSpacing: '0.05em',
-          }}>{key}</span>
-          <span style={{
-            color: 'rgba(245,239,233,0.35)',
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '0.6rem',
-            letterSpacing: '0.08em',
-          }}>{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Crosshair ────────────────────────────────────────────────────────────────
-function Crosshair({ locked }: { locked: boolean }) {
-  if (!locked) return null;
-  return (
-    <div style={{
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: 16,
-      height: 16,
-      zIndex: 10,
-      pointerEvents: 'none',
-    }}>
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: 0,
-        right: 0,
-        height: 1,
-        background: 'rgba(224,184,120,0.6)',
-        transform: 'translateY(-50%)',
-      }} />
-      <div style={{
-        position: 'absolute',
-        left: '50%',
-        top: 0,
-        bottom: 0,
-        width: 1,
-        background: 'rgba(224,184,120,0.6)',
-        transform: 'translateX(-50%)',
-      }} />
-    </div>
-  );
-}
-
-// ─── Main export ──────────────────────────────────────────────────────────────
 export default function GalleryWorld() {
   const [locked, setLocked] = useState(false);
-  const handleLockChange = useCallback((l: boolean) => setLocked(l), []);
+  const handleLock = useCallback((l: boolean) => setLocked(l), []);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -158,7 +81,7 @@ export default function GalleryWorld() {
           alpha: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
+          toneMappingExposure: 1.05,
         }}
         dpr={[1, Math.min(window.devicePixelRatio, 2)]}
         camera={{
@@ -174,12 +97,10 @@ export default function GalleryWorld() {
           <GalleryLighting />
           <GalleryArchitecture />
         </Suspense>
-        <PlayerController onLockChange={handleLockChange} enabled />
+        <PlayerController onLockChange={handleLock} enabled />
       </Canvas>
 
-      <ClickOverlay locked={locked} />
-      <Crosshair    locked={locked} />
-      <HUD          locked={locked} />
+      <ExplorePrompt locked={locked} />
     </div>
   );
 }
