@@ -1,77 +1,233 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CH } from './constants';
+import { CH, STAIR } from './constants';
+import { GenerativeArtwork, TypoArtwork } from './ProjectArtworks';
 
-// ─── Shared materials ─────────────────────────────────────────────────────────
+// ─── Materials ────────────────────────────────────────────────────────────────
 function useMats() {
   return useMemo(() => ({
-    wall: new THREE.MeshStandardMaterial({
-      color: CH.wall, roughness: 0.88, metalness: 0.0,
-    }),
-    wallLight: new THREE.MeshStandardMaterial({
-      color: CH.wallLight, roughness: 0.92, metalness: 0.0,
-    }),
-    floor: new THREE.MeshStandardMaterial({
-      color: CH.floor, roughness: 0.55, metalness: 0.0,
-    }),
-    ceiling: new THREE.MeshStandardMaterial({
-      color: CH.ceiling, roughness: 0.95, metalness: 0.0,
-    }),
-    dark: new THREE.MeshStandardMaterial({
-      color: CH.dark, roughness: 0.7, metalness: 0.1,
-    }),
-    frame: new THREE.MeshStandardMaterial({
-      color: CH.frame, roughness: 0.55, metalness: 0.05,
-    }),
-    stair: new THREE.MeshStandardMaterial({
-      color: CH.floor, roughness: 0.65, metalness: 0.0,
-    }),
-    railing: new THREE.MeshStandardMaterial({
-      color: CH.dark, roughness: 0.4, metalness: 0.6,
-    }),
+    wall:      new THREE.MeshStandardMaterial({ color: 0xEEEAE1, roughness: 0.88, metalness: 0 }),
+    wallLight: new THREE.MeshStandardMaterial({ color: 0xF7F4ED, roughness: 0.92, metalness: 0 }),
+    wallDark:  new THREE.MeshStandardMaterial({ color: 0xE0DBD0, roughness: 0.85, metalness: 0 }),
+    floor:     new THREE.MeshStandardMaterial({ color: 0xCFC8BC, roughness: 0.58, metalness: 0 }),
+    floorUp:   new THREE.MeshStandardMaterial({ color: 0xD8D2C6, roughness: 0.55, metalness: 0 }),
+    ceiling:   new THREE.MeshStandardMaterial({ color: 0xEAE6DD, roughness: 0.95, metalness: 0 }),
+    darkStone: new THREE.MeshStandardMaterial({ color: 0x272522, roughness: 0.75, metalness: 0.05 }),
+    mattBlack: new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.80, metalness: 0.05 }),
+    walnut:    new THREE.MeshStandardMaterial({ color: 0x3A2922, roughness: 0.70, metalness: 0.02 }),
+    burgundy:  new THREE.MeshStandardMaterial({ color: 0x800020, roughness: 0.65, metalness: 0.05 }),
+    green:     new THREE.MeshStandardMaterial({ color: 0x66705A, roughness: 0.90, metalness: 0 }),
+    warmStone: new THREE.MeshStandardMaterial({ color: 0xC8BFB0, roughness: 0.80, metalness: 0 }),
+    metal:     new THREE.MeshStandardMaterial({ color: 0x2a2826, roughness: 0.35, metalness: 0.75 }),
+    stair:     new THREE.MeshStandardMaterial({ color: 0xD2CBC0, roughness: 0.62, metalness: 0 }),
+    railing:   new THREE.MeshStandardMaterial({ color: 0x1e1c1a, roughness: 0.40, metalness: 0.65 }),
+    offWhite:  new THREE.MeshStandardMaterial({ color: 0xF7F4ED, roughness: 0.92, metalness: 0 }),
+    seamMat:   new THREE.MeshStandardMaterial({ color: 0xBFB8AC, roughness: 0.90, metalness: 0 }),
   }), []);
 }
 
-// ─── Thick arch opening ───────────────────────────────────────────────────────
-// Creates a rectangular opening with thick reveals (depth = wall thickness).
-// The opening itself is empty — geometry is the surrounding wall panels.
-function ThickArch({
-  wallW, wallH, wallD,
-  openW, openH,
-  mat,
-  position,
-  rotation,
+// ─── Curved arch geometry via Shape + ExtrudeGeometry ────────────────────────
+// Creates a thick wall section with a true curved arch opening.
+// The arch is a rectangle with a semicircular top.
+function makeArchShape(wallW: number, wallH: number, openW: number, openH: number, archR: number) {
+  // Outer rectangle
+  const shape = new THREE.Shape();
+  shape.moveTo(-wallW / 2, 0);
+  shape.lineTo( wallW / 2, 0);
+  shape.lineTo( wallW / 2, wallH);
+  shape.lineTo(-wallW / 2, wallH);
+  shape.closePath();
+
+  // Hole: rectangle + semicircle top
+  const hole = new THREE.Path();
+  const hw = openW / 2;
+  hole.moveTo(-hw, 0);
+  hole.lineTo(-hw, openH - archR);
+  // Left curve
+  hole.quadraticCurveTo(-hw, openH, -hw + archR, openH);
+  // Top arc
+  hole.absarc(0, openH - archR, archR + (hw - archR), Math.PI, 0, true);
+  // Right curve
+  hole.quadraticCurveTo(hw, openH, hw, openH - archR);
+  hole.lineTo(hw, 0);
+  hole.closePath();
+  shape.holes.push(hole);
+
+  return shape;
+}
+
+function CurvedArch({
+  wallW, wallH, wallD, openW, openH, archR, mat, position, rotation,
 }: {
   wallW: number; wallH: number; wallD: number;
-  openW: number; openH: number;
+  openW: number; openH: number; archR: number;
   mat: THREE.MeshStandardMaterial;
   position: [number, number, number];
   rotation?: [number, number, number];
 }) {
-  const sideW = (wallW - openW) / 2;
+  const geo = useMemo(() => {
+    const shape = makeArchShape(wallW, wallH, openW, openH, archR);
+    return new THREE.ExtrudeGeometry(shape, {
+      depth: wallD,
+      bevelEnabled: true,
+      bevelThickness: 0.025,
+      bevelSize: 0.018,
+      bevelSegments: 3,
+    });
+  }, [wallW, wallH, wallD, openW, openH, archR]);
+
   return (
-    <group
-      position={position}
+    <mesh
+      castShadow
+      receiveShadow
+      geometry={geo}
+      position={[position[0] - 0, position[1], position[2] - wallD / 2]}
       rotation={rotation ? new THREE.Euler(...rotation) : undefined}
     >
-      {/* Left panel */}
-      <mesh castShadow receiveShadow position={[-(openW / 2 + sideW / 2), wallH / 2, 0]}>
-        <boxGeometry args={[sideW, wallH, wallD]} />
+      <primitive object={mat} attach="material" />
+    </mesh>
+  );
+}
+
+// ─── Floor tiles with subtle seams ───────────────────────────────────────────
+function FloorTiles({ cx, cz, w, d, tileSize, mat, seamMat }: {
+  cx: number; cz: number; w: number; d: number;
+  tileSize: number;
+  mat: THREE.MeshStandardMaterial;
+  seamMat: THREE.MeshStandardMaterial;
+}) {
+  const cols = Math.ceil(w / tileSize);
+  const rows = Math.ceil(d / tileSize);
+  const sx = cx - w / 2;
+  const sz = cz - d / 2;
+  return (
+    <group>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[cx, 0.001, cz]}>
+        <planeGeometry args={[w, d]} />
         <primitive object={mat} attach="material" />
       </mesh>
-      {/* Right panel */}
-      <mesh castShadow receiveShadow position={[(openW / 2 + sideW / 2), wallH / 2, 0]}>
-        <boxGeometry args={[sideW, wallH, wallD]} />
+      {Array.from({ length: cols + 1 }, (_, i) => (
+        <mesh key={`cx${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]}
+          position={[sx + i * tileSize, 0.003, cz]}>
+          <planeGeometry args={[0.010, d]} />
+          <primitive object={seamMat} attach="material" />
+        </mesh>
+      ))}
+      {Array.from({ length: rows + 1 }, (_, i) => (
+        <mesh key={`cz${i}`} receiveShadow rotation={[-Math.PI / 2, 0, 0]}
+          position={[cx, 0.003, sz + i * tileSize]}>
+          <planeGeometry args={[w, 0.010]} />
+          <primitive object={seamMat} attach="material" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ─── Ceiling with recessed light channel ─────────────────────────────────────
+function CeilingWithChannel({ cx, cy, cz, w, d, mat }: {
+  cx: number; cy: number; cz: number; w: number; d: number;
+  mat: THREE.MeshStandardMaterial;
+}) {
+  const emissiveMat = useMemo(() => new THREE.MeshStandardMaterial({
+    color: 0xFFF8F0,
+    emissive: new THREE.Color(0xFFF8F0),
+    emissiveIntensity: 0.45,
+    roughness: 1,
+  }), []);
+  return (
+    <group position={[cx, cy, cz]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w, d]} />
         <primitive object={mat} attach="material" />
       </mesh>
-      {/* Lintel */}
-      <mesh castShadow receiveShadow position={[0, openH + (wallH - openH) / 2, 0]}>
-        <boxGeometry args={[openW, wallH - openH, wallD]} />
+      {/* Recessed light channel — thin emissive strip */}
+      <mesh position={[0, -0.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.18, d * 0.7]} />
+        <primitive object={emissiveMat} attach="material" />
+      </mesh>
+    </group>
+  );
+}
+
+// ─── Bench ────────────────────────────────────────────────────────────────────
+function Bench({ position, rotation, legMat, seatMat }: {
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  legMat: THREE.MeshStandardMaterial;
+  seatMat: THREE.MeshStandardMaterial;
+}) {
+  const L = 2.0, seatH = 0.44, D = 0.40, legH = 0.40, legT = 0.055;
+  return (
+    <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : undefined}>
+      <mesh castShadow receiveShadow position={[0, seatH, 0]}>
+        <boxGeometry args={[L, 0.055, D]} />
+        <primitive object={seatMat} attach="material" />
+      </mesh>
+      {[[-L/2+0.10, legH/2, -D/2+0.07],[L/2-0.10, legH/2, -D/2+0.07],
+        [-L/2+0.10, legH/2,  D/2-0.07],[L/2-0.10, legH/2,  D/2-0.07]].map(([x,y,z], i) => (
+        <mesh key={i} castShadow receiveShadow position={[x, y, z]}>
+          <boxGeometry args={[legT, legH, legT]} />
+          <primitive object={legMat} attach="material" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ─── Floating ring sculpture ──────────────────────────────────────────────────
+function FloatingRing({ position, mat }: {
+  position: [number, number, number];
+  mat: THREE.MeshStandardMaterial;
+}) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((_, dt) => {
+    if (ref.current) ref.current.rotation.y += dt * 0.05;
+  });
+  const geo1 = useMemo(() => new THREE.TorusGeometry(1.2, 0.06, 16, 80), []);
+  const geo2 = useMemo(() => new THREE.TorusGeometry(0.72, 0.038, 12, 60), []);
+  return (
+    <group ref={ref} position={position}>
+      <mesh castShadow geometry={geo1}><primitive object={mat} attach="material" /></mesh>
+      <mesh castShadow geometry={geo2} rotation={[Math.PI / 2.8, 0, 0]}>
         <primitive object={mat} attach="material" />
       </mesh>
-      {/* Soffit inside opening */}
-      <mesh receiveShadow position={[0, openH - 0.01, 0]}>
-        <boxGeometry args={[openW, 0.02, wallD]} />
+    </group>
+  );
+}
+
+// ─── Ribbon sculpture — single continuous form ────────────────────────────────
+function RibbonSculpture({ position, mat }: {
+  position: [number, number, number];
+  mat: THREE.MeshStandardMaterial;
+}) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((_, dt) => {
+    if (ref.current) ref.current.rotation.y += dt * 0.035;
+  });
+
+  const geo = useMemo(() => {
+    // Build a tube along a 3D curve — single recognisable form
+    const pts: THREE.Vector3[] = [];
+    const N = 60;
+    for (let i = 0; i <= N; i++) {
+      const t = i / N;
+      const angle = t * Math.PI * 4;
+      const r = 0.5 + Math.sin(t * Math.PI * 2) * 0.25;
+      pts.push(new THREE.Vector3(
+        Math.cos(angle) * r,
+        t * 2.6,
+        Math.sin(angle) * r,
+      ));
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    return new THREE.TubeGeometry(curve, 80, 0.055, 8, false);
+  }, []);
+
+  return (
+    <group ref={ref} position={position}>
+      <mesh castShadow geometry={geo}>
         <primitive object={mat} attach="material" />
       </mesh>
     </group>
@@ -79,23 +235,15 @@ function ThickArch({
 }
 
 // ─── Entrance vestibule ───────────────────────────────────────────────────────
-// Narrow, lower-ceilinged entry that compresses before opening into main gallery
 function EntranceVestibule({ m }: { m: ReturnType<typeof useMats> }) {
-  // 12 wide × 5 tall × 16 deep, centred at Z=22
-  const W = 12, H = 5, D = 16, CZ = 22;
+  const W = 12, H = 5.5, D = 16, CZ = 22;
   const hw = W / 2, hd = D / 2;
-  const T = 1.2; // thick walls
+  const T = 1.4;
 
   return (
     <group position={[0, 0, CZ]}>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.floor} attach="material" />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.ceiling} attach="material" />
-      </mesh>
+      <FloorTiles cx={0} cz={0} w={W} d={D} tileSize={2.5} mat={m.floor} seamMat={m.seamMat} />
+      <CeilingWithChannel cx={0} cy={H} cz={0} w={W} d={D} mat={m.ceiling} />
       {/* Back wall */}
       <mesh castShadow receiveShadow position={[0, H / 2, hd]}>
         <boxGeometry args={[W, H, T]} />
@@ -111,88 +259,38 @@ function EntranceVestibule({ m }: { m: ReturnType<typeof useMats> }) {
         <boxGeometry args={[T, H, D]} />
         <primitive object={m.wall} attach="material" />
       </mesh>
-      {/* Front wall with arch opening into main gallery */}
-      <ThickArch
+      {/* Hero arch — curved, thick, signature element */}
+      <CurvedArch
         wallW={W} wallH={H} wallD={T}
-        openW={5.5} openH={4.2}
+        openW={6.0} openH={4.8} archR={3.0}
         mat={m.wall}
         position={[0, 0, -hd]}
       />
+      {/* Baseboard */}
+      <mesh position={[-hw + T/2 + 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
+      <mesh position={[hw - T/2 - 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
+      {/* Typographic artwork on back wall */}
+      <TypoArtwork position={[0, 2.8, hd - T / 2 - 0.10]} />
     </group>
   );
 }
 
-// ─── Main gallery — ground floor ──────────────────────────────────────────────
-// Tall, wide, asymmetric. Left wall has two large artworks. Right side opens
-// toward staircase. Back wall has a large arch into the upper stair hall.
+// ─── Main gallery ground floor ────────────────────────────────────────────────
 function MainGalleryGround({ m }: { m: ReturnType<typeof useMats> }) {
   const W = 20, H = 9, D = 32, CZ = -2;
   const hw = W / 2, hd = D / 2;
-  const T = 1.0;
+  const T = 1.2;
 
   return (
     <group position={[0, 0, CZ]}>
-      {/* Floor */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.floor} attach="material" />
-      </mesh>
-      {/* Ceiling */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.ceiling} attach="material" />
-      </mesh>
-      {/* Left wall — full, artwork hangs here */}
-      <mesh castShadow receiveShadow position={[-hw, H / 2, 0]}>
-        <boxGeometry args={[T, H, D]} />
-        <primitive object={m.wall} attach="material" />
-      </mesh>
-      {/* Right wall — full */}
-      <mesh castShadow receiveShadow position={[hw, H / 2, 0]}>
-        <boxGeometry args={[T, H, D]} />
-        <primitive object={m.wall} attach="material" />
-      </mesh>
-      {/* South wall — connects to vestibule (open, no geometry needed — vestibule front wall handles it) */}
-      {/* North wall — large arch opening toward stair hall */}
-      <ThickArch
-        wallW={W} wallH={H} wallD={T}
-        openW={7} openH={7}
-        mat={m.wall}
-        position={[0, 0, -hd]}
-      />
-      {/* Baseboard left */}
-      <mesh position={[-hw + T / 2 + 0.01, 0.06, 0]}>
-        <boxGeometry args={[0.04, 0.12, D]} />
-        <primitive object={m.dark} attach="material" />
-      </mesh>
-      {/* Baseboard right */}
-      <mesh position={[hw - T / 2 - 0.01, 0.06, 0]}>
-        <boxGeometry args={[0.04, 0.12, D]} />
-        <primitive object={m.dark} attach="material" />
-      </mesh>
-    </group>
-  );
-}
-
-// ─── Stair hall — the space containing the monumental staircase ───────────────
-function StairHall({ m }: { m: ReturnType<typeof useMats> }) {
-  // Wider, taller space. Stair occupies right-centre.
-  const W = 22, H = 12, D = 20, CZ = -24;
-  const hw = W / 2, hd = D / 2;
-  const T = 1.0;
-
-  return (
-    <group position={[0, 0, CZ]}>
-      {/* Floor */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.floor} attach="material" />
-      </mesh>
-      {/* Ceiling */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.ceiling} attach="material" />
-      </mesh>
+      <FloorTiles cx={0} cz={0} w={W} d={D} tileSize={3.0} mat={m.floor} seamMat={m.seamMat} />
+      <CeilingWithChannel cx={0} cy={H} cz={0} w={W} d={D} mat={m.ceiling} />
       {/* Left wall */}
       <mesh castShadow receiveShadow position={[-hw, H / 2, 0]}>
         <boxGeometry args={[T, H, D]} />
@@ -203,160 +301,288 @@ function StairHall({ m }: { m: ReturnType<typeof useMats> }) {
         <boxGeometry args={[T, H, D]} />
         <primitive object={m.wall} attach="material" />
       </mesh>
-      {/* Back wall — solid, large surface */}
+      {/* North arch — curved, into stair hall */}
+      <CurvedArch
+        wallW={W} wallH={H} wallD={T}
+        openW={7.5} openH={7.5} archR={3.75}
+        mat={m.wall}
+        position={[0, 0, -hd]}
+      />
+      {/* Projecting panel behind left artwork — creates depth */}
+      <mesh castShadow receiveShadow position={[-hw + T/2 + 0.20, H/2, -2]}>
+        <boxGeometry args={[0.40, H, 7.0]} />
+        <primitive object={m.wallDark} attach="material" />
+      </mesh>
+      {/* Projecting panel behind right artwork */}
+      <mesh castShadow receiveShadow position={[hw - T/2 - 0.20, H/2, -6]}>
+        <boxGeometry args={[0.40, H, 7.0]} />
+        <primitive object={m.wallDark} attach="material" />
+      </mesh>
+      {/* Baseboard */}
+      <mesh position={[-hw + T/2 + 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
+      <mesh position={[hw - T/2 - 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
+      {/* Bench in front of left artwork */}
+      <Bench position={[-5.0, 0, -2]} rotation={[0, Math.PI / 2, 0]}
+        legMat={m.mattBlack} seatMat={m.walnut} />
+      {/* Bench in front of right artwork */}
+      <Bench position={[5.0, 0, -6]} rotation={[0, -Math.PI / 2, 0]}
+        legMat={m.mattBlack} seatMat={m.walnut} />
+      {/* Ribbon sculpture — foreground, creates parallax */}
+      <RibbonSculpture position={[1.5, 0, 4]} mat={m.burgundy} />
+      {/* Generative artwork on right wall */}
+      <GenerativeArtwork
+        position={[hw - T/2 - 0.22, 5.5, 8]}
+        rotation={[0, -Math.PI / 2, 0]}
+        width={3.8} height={2.6}
+      />
+    </group>
+  );
+}
+
+// ─── Stair hall ───────────────────────────────────────────────────────────────
+function StairHall({ m }: { m: ReturnType<typeof useMats> }) {
+  const W = 22, H = 12, D = 22, CZ = -25;
+  const hw = W / 2, hd = D / 2;
+  const T = 1.2;
+
+  return (
+    <group position={[0, 0, CZ]}>
+      <FloorTiles cx={0} cz={0} w={W} d={D} tileSize={3.0} mat={m.floor} seamMat={m.seamMat} />
+      <CeilingWithChannel cx={0} cy={H} cz={0} w={W} d={D} mat={m.ceiling} />
+      {/* Left wall */}
+      <mesh castShadow receiveShadow position={[-hw, H / 2, 0]}>
+        <boxGeometry args={[T, H, D]} />
+        <primitive object={m.wall} attach="material" />
+      </mesh>
+      {/* Right wall */}
+      <mesh castShadow receiveShadow position={[hw, H / 2, 0]}>
+        <boxGeometry args={[T, H, D]} />
+        <primitive object={m.wall} attach="material" />
+      </mesh>
+      {/* Back wall */}
       <mesh castShadow receiveShadow position={[0, H / 2, -hd]}>
         <boxGeometry args={[W, H, T]} />
         <primitive object={m.wall} attach="material" />
       </mesh>
-      {/* South wall — arch opening from main gallery (matches north arch) */}
-      <ThickArch
+      {/* South arch from main gallery */}
+      <CurvedArch
         wallW={W} wallH={H} wallD={T}
-        openW={7} openH={7}
+        openW={7.5} openH={7.5} archR={3.75}
         mat={m.wall}
         position={[0, 0, hd]}
       />
+      {/* Floating ring — high in void */}
+      <FloatingRing position={[3, 9.0, -2]} mat={m.metal} />
+      {/* Baseboard */}
+      <mesh position={[-hw + T/2 + 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
+      <mesh position={[hw - T/2 - 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
+      </mesh>
     </group>
   );
 }
 
-// ─── Monumental staircase ─────────────────────────────────────────────────────
-// 16 steps, 7 wide, rising from Y=0 at Z=-14 to Y=2.88 at Z=-19.12
-// Then a landing, then 16 more steps to upper floor at Y=5.20
-const STEP_W   = 7.5;
-const STEP_H   = 0.18;
-const STEP_D   = 0.32;
-const STEPS_1  = 16;  // first flight
-const STEPS_2  = 16;  // second flight
-const STAIR_X  = 3;   // offset from centre
-
-function StaircaseFlight({
-  startX, startY, startZ,
-  steps, stepW, stepH, stepD,
-  m,
-}: {
-  startX: number; startY: number; startZ: number;
-  steps: number; stepW: number; stepH: number; stepD: number;
-  m: ReturnType<typeof useMats>;
-}) {
-  return (
-    <group>
-      {Array.from({ length: steps }, (_, i) => {
-        const y = startY + i * stepH + stepH / 2;
-        const z = startZ - i * stepD - stepD / 2;
-        return (
-          <group key={i}>
-            {/* Tread */}
-            <mesh castShadow receiveShadow position={[startX, y, z]}>
-              <boxGeometry args={[stepW, stepH * 0.5, stepD + 0.01]} />
-              <primitive object={m.stair} attach="material" />
-            </mesh>
-            {/* Riser */}
-            <mesh castShadow position={[startX, y - stepH * 0.25, z + stepD / 2]}>
-              <boxGeometry args={[stepW, stepH * 0.5, 0.03]} />
-              <primitive object={m.wall} attach="material" />
-            </mesh>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
+// ─── SOLID staircase ──────────────────────────────────────────────────────────
+// Each step is a SOLID block — full height from floor to tread surface.
+// This eliminates the floating-slab appearance entirely.
+// Two flights of STAIR.count steps each, with a landing between.
 function MonumentalStaircase({ m }: { m: ReturnType<typeof useMats> }) {
-  // Flight 1: Z=-14 → Z=-19.12, Y=0 → Y=2.88
-  const f1StartZ = -14;
-  const f1EndZ   = f1StartZ - STEPS_1 * STEP_D;  // -19.12
-  const f1EndY   = STEPS_1 * STEP_H;              // 2.88
+  const { rise, depth, count, width, offsetX, startZ } = STAIR;
 
-  // Landing: Z=-19.12 → Z=-21, Y=2.88
-  const landingZ  = f1EndZ;
-  const landingY  = f1EndY;
-  const landingD  = 2.0;
+  // Flight 1: Z = startZ → startZ - count*depth
+  // Each step i: block from Y=0 to Y=(i+1)*rise, depth=depth, at Z = startZ - i*depth
+  const flight1 = Array.from({ length: count }, (_, i) => ({
+    x: offsetX,
+    y: ((i + 1) * rise) / 2,          // centre Y of solid block
+    z: startZ - i * depth - depth / 2, // centre Z
+    h: (i + 1) * rise,                 // full height from floor
+    w: width,
+    d: depth,
+  }));
 
-  // Flight 2: Z=-21 → Z=-26.12, Y=2.88 → Y=5.76 (we cap at 5.20)
-  const f2StartZ = landingZ - landingD;
-  const f2StartY = landingY;
+  const f1EndY = count * rise;
+  const f1EndZ = startZ - count * depth;
+  const landingD = 2.0;
+  const f2StartZ = f1EndZ - landingD;
 
-  // Stringer (solid side wall under stair — left side)
-  const totalD1 = STEPS_1 * STEP_D;
-  const totalD2 = STEPS_2 * STEP_D;
+  // Flight 2
+  const flight2 = Array.from({ length: count }, (_, i) => ({
+    x: offsetX,
+    y: f1EndY + ((i + 1) * rise) / 2,
+    z: f2StartZ - i * depth - depth / 2,
+    h: (i + 1) * rise,
+    w: width,
+    d: depth,
+  }));
+
+  const f2EndY = f1EndY + count * rise;
+  const f2EndZ = f2StartZ - count * depth;
+
+  // Stringer — solid wall under each flight (left side)
+  const stringerX = offsetX - width / 2 + 0.18;
+
+  // Handrail posts
+  const postCount = 6;
 
   return (
     <group>
-      {/* Flight 1 */}
-      <StaircaseFlight
-        startX={STAIR_X} startY={0} startZ={f1StartZ}
-        steps={STEPS_1} stepW={STEP_W} stepH={STEP_H} stepD={STEP_D}
-        m={m}
-      />
+      {/* Flight 1 — solid blocks */}
+      {flight1.map(({ x, y, z, h, w, d }, i) => (
+        <mesh key={`f1-${i}`} castShadow receiveShadow position={[x, y, z]}>
+          <boxGeometry args={[w, h, d]} />
+          <primitive object={m.stair} attach="material" />
+        </mesh>
+      ))}
 
-      {/* Landing */}
+      {/* Landing slab */}
       <mesh castShadow receiveShadow
-        position={[STAIR_X, landingY + STEP_H / 4, landingZ - landingD / 2]}>
-        <boxGeometry args={[STEP_W, STEP_H / 2, landingD]} />
+        position={[offsetX, f1EndY - rise / 2, f1EndZ - landingD / 2]}>
+        <boxGeometry args={[width, f1EndY, landingD]} />
         <primitive object={m.stair} attach="material" />
       </mesh>
 
-      {/* Flight 2 */}
-      <StaircaseFlight
-        startX={STAIR_X} startY={f2StartY} startZ={f2StartZ}
-        steps={STEPS_2} stepW={STEP_W} stepH={STEP_H} stepD={STEP_D}
-        m={m}
-      />
+      {/* Flight 2 — solid blocks */}
+      {flight2.map(({ x, y, z, h, w, d }, i) => (
+        <mesh key={`f2-${i}`} castShadow receiveShadow position={[x, y, z]}>
+          <boxGeometry args={[w, h, d]} />
+          <primitive object={m.stair} attach="material" />
+        </mesh>
+      ))}
 
-      {/* Left stringer — solid wall under flight 1 */}
+      {/* Left stringer — flight 1 */}
       <mesh castShadow receiveShadow
-        position={[STAIR_X - STEP_W / 2 + 0.15, f1EndY / 2, f1StartZ - totalD1 / 2]}>
-        <boxGeometry args={[0.3, f1EndY + 0.3, totalD1 + 0.1]} />
-        <primitive object={m.wall} attach="material" />
+        position={[stringerX, f1EndY / 2, startZ - (count * depth) / 2]}>
+        <boxGeometry args={[0.32, f1EndY + 0.2, count * depth + 0.1]} />
+        <primitive object={m.wallDark} attach="material" />
       </mesh>
 
       {/* Left stringer — flight 2 */}
       <mesh castShadow receiveShadow
-        position={[STAIR_X - STEP_W / 2 + 0.15, f2StartY + STEPS_2 * STEP_H / 2, f2StartZ - totalD2 / 2]}>
-        <boxGeometry args={[0.3, STEPS_2 * STEP_H + 0.3, totalD2 + 0.1]} />
-        <primitive object={m.wall} attach="material" />
+        position={[stringerX, f1EndY + (count * rise) / 2, f2StartZ - (count * depth) / 2]}>
+        <boxGeometry args={[0.32, count * rise + 0.2, count * depth + 0.1]} />
+        <primitive object={m.wallDark} attach="material" />
       </mesh>
 
       {/* Handrail — flight 1 */}
-      <mesh castShadow
-        position={[STAIR_X + STEP_W / 2 - 0.1, f1EndY / 2 + 1.0, f1StartZ - totalD1 / 2]}
-        rotation={[0, 0, Math.atan2(f1EndY, totalD1)]}>
-        <boxGeometry args={[0.05, 0.05, Math.sqrt(totalD1 ** 2 + f1EndY ** 2) + 0.5]} />
-        <primitive object={m.railing} attach="material" />
-      </mesh>
+      {(() => {
+        const railX = offsetX + width / 2 - 0.12;
+        const railLen = Math.sqrt((count * depth) ** 2 + f1EndY ** 2);
+        const railAngle = Math.atan2(f1EndY, count * depth);
+        const midZ = startZ - (count * depth) / 2;
+        const midY = f1EndY / 2 + 1.0;
+        return (
+          <group>
+            <mesh castShadow position={[railX, midY, midZ]}
+              rotation={[0, 0, railAngle]}>
+              <boxGeometry args={[0.045, 0.045, railLen + 0.4]} />
+              <primitive object={m.railing} attach="material" />
+            </mesh>
+            {Array.from({ length: postCount }, (_, i) => {
+              const frac = (i + 0.5) / postCount;
+              const pz = startZ - frac * count * depth;
+              const py = frac * f1EndY;
+              return (
+                <mesh key={i} castShadow position={[railX, py + 0.55, pz]}>
+                  <boxGeometry args={[0.03, 1.1, 0.03]} />
+                  <primitive object={m.railing} attach="material" />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })()}
 
       {/* Handrail — flight 2 */}
-      <mesh castShadow
-        position={[STAIR_X + STEP_W / 2 - 0.1, f2StartY + STEPS_2 * STEP_H / 2 + 1.0, f2StartZ - totalD2 / 2]}
-        rotation={[0, 0, Math.atan2(STEPS_2 * STEP_H, totalD2)]}>
-        <boxGeometry args={[0.05, 0.05, Math.sqrt(totalD2 ** 2 + (STEPS_2 * STEP_H) ** 2) + 0.5]} />
+      {(() => {
+        const railX = offsetX + width / 2 - 0.12;
+        const railLen = Math.sqrt((count * depth) ** 2 + (count * rise) ** 2);
+        const railAngle = Math.atan2(count * rise, count * depth);
+        const midZ = f2StartZ - (count * depth) / 2;
+        const midY = f1EndY + (count * rise) / 2 + 1.0;
+        return (
+          <group>
+            <mesh castShadow position={[railX, midY, midZ]}
+              rotation={[0, 0, railAngle]}>
+              <boxGeometry args={[0.045, 0.045, railLen + 0.4]} />
+              <primitive object={m.railing} attach="material" />
+            </mesh>
+            {Array.from({ length: postCount }, (_, i) => {
+              const frac = (i + 0.5) / postCount;
+              const pz = f2StartZ - frac * count * depth;
+              const py = f1EndY + frac * count * rise;
+              return (
+                <mesh key={i} castShadow position={[railX, py + 0.55, pz]}>
+                  <boxGeometry args={[0.03, 1.1, 0.03]} />
+                  <primitive object={m.railing} attach="material" />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })()}
+    </group>
+  );
+}
+
+// ─── Upper landing ────────────────────────────────────────────────────────────
+function UpperLanding({ m }: { m: ReturnType<typeof useMats> }) {
+  const { rise, depth, count, width, offsetX, startZ } = STAIR;
+  const f1EndY = count * rise;
+  const f1EndZ = startZ - count * depth;
+  const landingD = 2.0;
+  const f2StartZ = f1EndZ - landingD;
+  const f2EndZ   = f2StartZ - count * depth;
+  const FLOOR_Y  = 5.20;
+  const railX    = offsetX + width / 2 + 0.5;
+
+  return (
+    <group>
+      {/* Upper landing slab */}
+      <mesh castShadow receiveShadow position={[offsetX, FLOOR_Y - 0.14, f2EndZ - 3]}>
+        <boxGeometry args={[width + 2, 0.28, 6]} />
+        <primitive object={m.stair} attach="material" />
+      </mesh>
+      {/* Balcony railing */}
+      <mesh position={[railX, FLOOR_Y + 0.55, f2EndZ - 3]}>
+        <boxGeometry args={[0.045, 1.1, 6]} />
         <primitive object={m.railing} attach="material" />
       </mesh>
+      <mesh position={[railX, FLOOR_Y + 1.1, f2EndZ - 3]}>
+        <boxGeometry args={[0.045, 0.045, 6]} />
+        <primitive object={m.railing} attach="material" />
+      </mesh>
+      {Array.from({ length: 5 }, (_, i) => (
+        <mesh key={i} castShadow
+          position={[railX, FLOOR_Y + 0.55, f2EndZ - 0.5 - i * 1.1]}>
+          <boxGeometry args={[0.03, 1.1, 0.03]} />
+          <primitive object={m.railing} attach="material" />
+        </mesh>
+      ))}
     </group>
   );
 }
 
 // ─── Upper gallery ────────────────────────────────────────────────────────────
-// Floor at Y=5.20, extends from Z=-26 to Z=-46
 function UpperGallery({ m }: { m: ReturnType<typeof useMats> }) {
-  const W = 18, H = 6, D = 22, CZ = -35;
+  const W = 18, H = 6.5, D = 24, CZ = -36;
   const hw = W / 2, hd = D / 2;
-  const T = 1.0;
+  const T = 1.2;
   const FLOOR_Y = 5.20;
 
   return (
     <group position={[0, FLOOR_Y, CZ]}>
-      {/* Floor */}
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.floor} attach="material" />
-      </mesh>
-      {/* Ceiling */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, H, 0]}>
-        <planeGeometry args={[W, D]} />
-        <primitive object={m.ceiling} attach="material" />
-      </mesh>
+      <FloorTiles cx={0} cz={0} w={W} d={D} tileSize={2.5} mat={m.floorUp} seamMat={m.seamMat} />
+      <CeilingWithChannel cx={0} cy={H} cz={0} w={W} d={D} mat={m.ceiling} />
       {/* Left wall */}
       <mesh castShadow receiveShadow position={[-hw, H / 2, 0]}>
         <boxGeometry args={[T, H, D]} />
@@ -367,51 +593,33 @@ function UpperGallery({ m }: { m: ReturnType<typeof useMats> }) {
         <boxGeometry args={[T, H, D]} />
         <primitive object={m.wall} attach="material" />
       </mesh>
-      {/* Back wall — featured artwork hangs here */}
+      {/* Back wall — TejaLens hangs here */}
       <mesh castShadow receiveShadow position={[0, H / 2, -hd]}>
         <boxGeometry args={[W, H, T]} />
         <primitive object={m.wallLight} attach="material" />
       </mesh>
-      {/* South opening — balcony edge, no wall */}
-      {/* Balcony edge beam */}
-      <mesh castShadow position={[0, 0.12, hd]}>
-        <boxGeometry args={[W, 0.24, T]} />
-        <primitive object={m.dark} attach="material" />
+      {/* Projecting panel behind TejaLens — separates artwork from wall */}
+      <mesh castShadow receiveShadow position={[0, H / 2, -hd + T / 2 + 0.25]}>
+        <boxGeometry args={[9.0, H, 0.50]} />
+        <primitive object={m.offWhite} attach="material" />
+      </mesh>
+      {/* Balcony edge */}
+      <mesh castShadow position={[0, 0.14, hd]}>
+        <boxGeometry args={[W, 0.28, T]} />
+        <primitive object={m.darkStone} attach="material" />
       </mesh>
       {/* Baseboard */}
-      <mesh position={[-hw + T / 2 + 0.01, 0.06, 0]}>
-        <boxGeometry args={[0.04, 0.12, D]} />
-        <primitive object={m.dark} attach="material" />
+      <mesh position={[-hw + T/2 + 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
       </mesh>
-      <mesh position={[hw - T / 2 - 0.01, 0.06, 0]}>
-        <boxGeometry args={[0.04, 0.12, D]} />
-        <primitive object={m.dark} attach="material" />
+      <mesh position={[hw - T/2 - 0.01, 0.07, 0]}>
+        <boxGeometry args={[0.04, 0.14, D]} />
+        <primitive object={m.mattBlack} attach="material" />
       </mesh>
-    </group>
-  );
-}
-
-// ─── Upper landing / bridge ───────────────────────────────────────────────────
-// Connects stair top to upper gallery floor
-function UpperLanding({ m }: { m: ReturnType<typeof useMats> }) {
-  const FLOOR_Y = 5.20;
-  return (
-    <group>
-      {/* Landing slab */}
-      <mesh castShadow receiveShadow position={[STAIR_X, FLOOR_Y - 0.12, -26]}>
-        <boxGeometry args={[STEP_W + 2, 0.24, 6]} />
-        <primitive object={m.stair} attach="material" />
-      </mesh>
-      {/* Balcony railing — open side */}
-      <mesh position={[STAIR_X + STEP_W / 2 + 0.8, FLOOR_Y + 0.55, -26]}>
-        <boxGeometry args={[0.05, 1.1, 6]} />
-        <primitive object={m.railing} attach="material" />
-      </mesh>
-      {/* Top rail */}
-      <mesh position={[STAIR_X + STEP_W / 2 + 0.8, FLOOR_Y + 1.1, -26]}>
-        <boxGeometry args={[0.05, 0.05, 6]} />
-        <primitive object={m.railing} attach="material" />
-      </mesh>
+      {/* Bench facing TejaLens */}
+      <Bench position={[0, 0, -5]} rotation={[0, Math.PI, 0]}
+        legMat={m.darkStone} seatMat={m.warmStone} />
     </group>
   );
 }
@@ -421,12 +629,12 @@ export default function GalleryArchitecture() {
   const m = useMats();
   return (
     <group>
-      <EntranceVestibule m={m} />
-      <MainGalleryGround m={m} />
-      <StairHall         m={m} />
+      <EntranceVestibule   m={m} />
+      <MainGalleryGround   m={m} />
+      <StairHall           m={m} />
       <MonumentalStaircase m={m} />
-      <UpperLanding      m={m} />
-      <UpperGallery      m={m} />
+      <UpperLanding        m={m} />
+      <UpperGallery        m={m} />
     </group>
   );
 }
