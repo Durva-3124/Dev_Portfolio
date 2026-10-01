@@ -3,51 +3,48 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ScrollProgress from '@/components/layout/ScrollProgress';
 import CustomCursor from '@/components/ui/CustomCursor';
+import Preloader from '@/components/ui/Preloader';
+import FloatingWidget from '@/three/FloatingWidget';
+import Hero from '@/sections/Hero';
+import About from '@/sections/About';
+import Skills from '@/sections/Skills';
+import Experience from '@/sections/Experience';
+import MyDesk from '@/sections/MyDesk';
+import Projects from '@/sections/Projects';
+import Education from '@/sections/Education';
+import Certifications from '@/sections/Certifications';
+import BeyondCode from '@/sections/BeyondCode';
+import Contact from '@/sections/Contact';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { useTheme } from '@/hooks/useTheme';
-import {
-  personal,
-  hero,
-  about,
-  skills,
-  experience,
-  projects,
-  education,
-  certifications,
-  contact,
-} from '@/data';
-
-void personal;
-void hero;
-void about;
-void skills;
-void experience;
-void projects;
-void education;
-void certifications;
-void contact;
+import { useKonami } from '@/hooks/useKonami';
+import confetti from 'canvas-confetti';
 
 function App() {
   useSmoothScroll();
   useTheme();
+  useKonami(() => confetti({ colors: ['#800020', '#e0b878'], particleCount: 120, spread: 80 }));
 
   return (
     <Fragment>
+      <Preloader />
       <CustomCursor />
       <ScrollProgress />
       <Navbar />
       <main>
-        <section id="hero">Hero placeholder</section>
-        <section id="about">About placeholder</section>
-        <section id="skills">Skills placeholder</section>
-        <section id="experience">Experience placeholder</section>
-        <section id="my-desk">My Desk placeholder</section>
-        <section id="projects">Projects placeholder</section>
-        <section id="education">Education placeholder</section>
-        <section id="certifications">Certifications placeholder</section>
-        <section id="contact">Contact placeholder</section>
+        <Hero />
+        <About />
+        <Skills />
+        <Experience />
+        <MyDesk />
+        <Projects />
+        <Education />
+        <Certifications />
+        <BeyondCode />
+        <Contact />
       </main>
       <Footer />
+      <FloatingWidget />
     </Fragment>
   );
 }
