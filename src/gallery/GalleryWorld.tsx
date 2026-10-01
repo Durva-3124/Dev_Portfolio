@@ -185,7 +185,7 @@ function SceneSetup() {
   return (
     <>
       <color attach="background" args={[C.bg]} />
-      <fog attach="fog" args={[C.bg, 45, 110]} />
+      <fog attach="fog" args={[C.bg, 55, 120]} />
     </>
   );
 }
@@ -259,7 +259,7 @@ export default function GalleryWorld() {
           alpha: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.0,
+          toneMappingExposure: 1.08,
         }}
         dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
         camera={{ fov: CAM.fov, near: CAM.near, far: CAM.far }}
