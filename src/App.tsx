@@ -1,52 +1,51 @@
-import { Fragment } from 'react';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
-import ScrollProgress from '@/components/layout/ScrollProgress';
-import CustomCursor from '@/components/ui/CustomCursor';
-import Preloader from '@/components/ui/Preloader';
-import FloatingWidget from '@/three/FloatingWidget';
-import Hero from '@/sections/Hero';
-import About from '@/sections/About';
-import Skills from '@/sections/Skills';
-import Experience from '@/sections/Experience';
-import MyDesk from '@/sections/MyDesk';
-import Projects from '@/sections/Projects';
-import Education from '@/sections/Education';
-import Certifications from '@/sections/Certifications';
-import BeyondCode from '@/sections/BeyondCode';
-import Contact from '@/sections/Contact';
-import { useSmoothScroll } from '@/hooks/useSmoothScroll';
-import { useTheme } from '@/hooks/useTheme';
-import { useKonami } from '@/hooks/useKonami';
-import confetti from 'canvas-confetti';
+import { Suspense } from 'react';
+import GalleryWorld from '@/gallery/GalleryWorld';
 
-function App() {
-  useSmoothScroll();
-  useTheme();
-  useKonami(() => confetti({ colors: ['#800020', '#e0b878'], particleCount: 120, spread: 80 }));
+// ─── Phase 1: Full-screen 3D gallery world ────────────────────────────────────
+// The existing portfolio sections (Hero, About, Skills, etc.) are preserved in
+// src/sections/ and will be integrated in Phase 6 as in-world content panels.
+// App.tsx is intentionally minimal for Phase 1.
 
+function LoadingScreen() {
   return (
-    <Fragment>
-      <Preloader />
-      <CustomCursor />
-      <ScrollProgress />
-      <Navbar />
-      <main>
-        <Hero />
-        <About />
-        <Skills />
-        <Experience />
-        <MyDesk />
-        <Projects />
-        <Education />
-        <Certifications />
-        <BeyondCode />
-        <Contact />
-      </main>
-      <Footer />
-      <FloatingWidget />
-    </Fragment>
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      background: '#0d0709',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: '1rem',
+    }}>
+      <div style={{
+        width: 48,
+        height: 48,
+        border: '2px solid rgba(224,184,120,0.15)',
+        borderTop: '2px solid #e0b878',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      }} />
+      <p style={{
+        color: 'rgba(224,184,120,0.6)',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '0.75rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase',
+      }}>
+        Loading world…
+      </p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
+      <Suspense fallback={<LoadingScreen />}>
+        <GalleryWorld />
+      </Suspense>
+    </div>
+  );
+}
