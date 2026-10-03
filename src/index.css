@@ -48,3 +48,49 @@ canvas {
   background: #800020;
   color: #fff;
 }
+
+/* ── Custom gallery cursor (PART B.10) ───────────────────────────────────────
+   Animated imperatively from a ref in GalleryWorld — never React state.
+   [data-view="true"] is set by the artwork onPointerOver/Out handlers. */
+.gallery-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(26, 22, 20, 0.65);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  transition: width 0.18s ease, height 0.18s ease, background 0.18s ease;
+}
+.gallery-cursor__label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: "Helvetica Neue", Inter, Arial, sans-serif;
+  font-size: 6.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f2ede4;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  white-space: nowrap;
+}
+.gallery-cursor[data-view='true'] {
+  width: 54px;
+  height: 54px;
+  background: rgba(18, 14, 12, 0.78);
+  mix-blend-mode: normal;
+  border: 1px solid rgba(176, 143, 82, 0.85);
+}
+.gallery-cursor[data-view='true'] .gallery-cursor__label {
+  opacity: 1;
+}
+
+/* The project overlay must be able to show it is scrollable */
+.project-overlay { scrollbar-width: thin; }
+.project-overlay::-webkit-scrollbar { display: block; width: 8px; }
+.project-overlay::-webkit-scrollbar-thumb { background: rgba(26, 22, 20, 0.22); }
