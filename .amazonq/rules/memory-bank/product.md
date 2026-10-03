@@ -1,34 +1,39 @@
 # Product Overview
 
-## Project: Durva Pawar 3D Portfolio
+## Project Purpose
+An immersive 3D developer portfolio for Durva Pawar — a B.Tech AI & ML student and Full-Stack/AI engineer. The portfolio presents professional work through an interactive 3D gallery experience rather than a traditional scrolling website.
 
-### Purpose
-An immersive, interactive 3D portfolio website for Durva Pawar — a developer/designer showcasing work, skills, and personality through a full-screen WebGL gallery world experience rather than a traditional scrollable page.
+## Value Proposition
+- Differentiates from standard portfolios via a walkable 3D gallery world built with Three.js/React Three Fiber
+- Showcases technical depth (Full-Stack, AI/ML, Backend) through the medium itself
+- Combines creative presentation (3D art gallery metaphor) with professional content
 
-### Value Proposition
-- Differentiates from standard portfolios via a walkable 3D gallery environment
-- Combines Three.js/R3F 3D scenes with polished 2D UI (Framer Motion, GSAP, Tailwind)
-- Reflects personal brand through a burgundy/gold color theme and custom 3D avatar
+## Key Features
+- **3D Gallery World**: Walkable virtual art gallery where projects are displayed as artworks on walls
+- **Interactive 3D Avatar**: Animated character with speech bubbles and hover interactions
+- **Hero 3D Scene**: Immersive landing with particle starfield and 3D elements
+- **My Desk Scene**: Interactive 3D desk environment with clickable objects
+- **Skill Sphere**: 3D rotating sphere visualizing tech skills
+- **Smooth Scroll**: Lenis-powered smooth scrolling across sections
+- **Custom Cursor**: Branded cursor with magnetic button effects
+- **Preloader**: Animated 3D preloader before main content
+- **Konami Code Easter Egg**: Hidden interaction via useKonami hook
+- **Reduced Motion Support**: Accessibility-aware animations
+- **Dark/Light Theme**: Theme switching via useTheme hook
+- **Scroll Progress Indicator**: Visual reading progress bar
 
-### Key Features
-- **3D Gallery World**: Full-screen walkable environment built with React Three Fiber
-- **Player Controller**: First/third-person navigation inside the gallery
-- **3D Avatar**: Animated character representing the portfolio owner
-- **Portfolio Sections** (preserved in `src/sections/`, to be integrated as in-world panels):
-  - Hero, About, Skills, Experience, Projects, Education, Certifications, BeyondCode, Contact, MyDesk
-- **Rich UI Components**: Custom cursor, magnetic buttons, tilt cards, glass cards, speech bubbles, timeline, preloader, project modal, section reveal animations
-- **Smooth Scroll**: Lenis-powered smooth scrolling
-- **Theme System**: Dark theme with burgundy/gold palette
-- **Easter Egg**: Konami code hook
-- **Performance**: Reduced motion support, Three.js performance monitoring
+## Portfolio Sections
+Hero → About → Skills → Experience → Projects → Education → Certifications → BeyondCode → MyDesk → Contact
 
-### Target Users
+## Target Users
 - Recruiters and hiring managers evaluating Durva's candidacy
-- Collaborators and clients exploring past work
-- Developers seeking inspiration for creative portfolio approaches
+- Potential collaborators and clients
+- Technical peers exploring the portfolio as a creative/technical showcase
 
-### Current Phase
-Phase 1 — Full-screen 3D gallery world active. Existing portfolio sections (Hero, About, etc.) are preserved and will be integrated as in-world content panels in Phase 6.
-
-### Deployment
-- Hosted on Vercel (`vercel.json` present, `public/_redirects` for SPA routing)
+## Owner Profile
+- **Name**: Durva Pawar
+- **Role**: Full-Stack Engineer, AI/ML Engineer, Backend Developer
+- **Location**: Pune, Maharashtra, India
+- **Education**: B.Tech AI & ML, PES Modern College of Engineering (CGPA 9.47)
+- **Key Projects**: meetsync-AI, BullSight, TejaLens
+- **Accent Color**: Burgundy `#800020`
