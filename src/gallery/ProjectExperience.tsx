@@ -1,238 +1,162 @@
-import { useEffect, type CSSProperties } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { projects } from '@/data';
-import type { ArtworkDef } from './constants';
+/**
+ * ProjectExperience.tsx — PART B.11
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The placeholder visual is gone. The overlay shows the SAME procedurally
+ * generated artwork that hangs in the museum (`getArtworkDataURL` returns the
+ * exact canvas `getArtworkTexture` uploads to the GPU, so the wall and the
+ * overlay can never disagree).
+ *
+ * Scroll: GalleryWorld's wheel/touch handlers bail out BEFORE preventDefault()
+ * while `scrollStore.locked` is true, so this panel's scroller works normally.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { hero, type InstallDef } from './constants';
+import { getArtworkDataURL } from './artworkTextures';
 
 interface Props {
-  artwork: ArtworkDef | null;
+  install: InstallDef | null;
   onReturn: () => void;
 }
 
-const s: Record<string, CSSProperties> = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 30,
-    overflowY: 'auto',
-    background: '#F2EFE7',
-    color: '#181818',
-    fontFamily: '"Helvetica Neue", Inter, Arial, sans-serif',
-  },
-  content: {
-    width: 'min(1100px, 88vw)',
-    margin: '0 auto',
-    padding: '10vh 0 14vh',
-  },
-  back: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 11,
-    letterSpacing: '0.22em',
-    textTransform: 'uppercase' as const,
-    color: '#181818',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 0,
-    marginBottom: '8vh',
-    opacity: 0.55,
-  },
-  eyebrow: {
-    fontSize: 11,
-    letterSpacing: '0.28em',
-    textTransform: 'uppercase' as const,
-    color: '#800020',
-    marginBottom: '1.2rem',
-  },
-  title: {
-    fontSize: 'clamp(48px, 8vw, 120px)',
-    fontWeight: 400,
-    lineHeight: 0.88,
-    letterSpacing: '-0.055em',
-    marginBottom: '4vh',
-  },
-  role: {
-    fontSize: 13,
-    letterSpacing: '0.18em',
-    textTransform: 'uppercase' as const,
-    color: '#888',
-    marginBottom: '6vh',
-  },
-  divider: {
-    width: 40,
-    height: 1,
-    background: '#181818',
-    opacity: 0.2,
-    margin: '4vh 0',
-  },
-  body: {
-    fontSize: 'clamp(15px, 1.6vw, 18px)',
-    lineHeight: 1.75,
-    color: '#333',
-    maxWidth: 680,
-    marginBottom: '6vh',
-  },
-  tagRow: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: 8,
-    marginBottom: '8vh',
-  },
-  tag: {
-    fontSize: 11,
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase' as const,
-    color: '#181818',
-    border: '1px solid rgba(24,24,24,0.25)',
-    padding: '5px 12px',
-  },
-  canvas: {
-    width: '100%',
-    aspectRatio: '16/7',
-    background: '#E4DED3',
-    marginBottom: '8vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#A9A197',
-    fontSize: 12,
-    letterSpacing: '0.18em',
-    textTransform: 'uppercase' as const,
-  },
-};
+const SANS = '"Helvetica Neue", Inter, Arial, sans-serif';
 
-export default function ProjectExperience({ artwork, onReturn }: Props) {
-  const project = artwork
-    ? projects.find((p) => p.slug === artwork.slug) ?? null
-    : null;
+function Section({ heading, children }: { heading: string; children: ReactNode }) {
+  return (
+    <section style={{ marginBottom: '2.5rem' }}>
+      <div style={{
+        fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase',
+        color: 'rgba(26,22,20,0.35)', marginBottom: '0.8rem',
+      }}>
+        {heading}
+      </div>
+      {children}
+    </section>
+  );
+}
 
-  // Escape key returns to gallery
+export default function ProjectExperience({ install, onReturn }: Props) {
+  const [visible, setVisible] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onReturn();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    if (install) {
+      setVisible(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
+    } else {
+      setExpanded(false);
+      const t = setTimeout(() => setVisible(false), 500);
+      return () => clearTimeout(t);
+    }
+  }, [install]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onReturn(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [onReturn]);
 
+  // Same pixels as the artwork on the wall (PART B.11)
+  const image = useMemo(() => (install ? getArtworkDataURL(install.id) : ''), [install]);
+
+  if (!visible || !install) return null;
+
+  const aspect = install.mount.width / install.mount.height;
+  const num = String(
+    install.mount.id === 'meetsync-ai' ? 1 : install.mount.id === 'bullsight' ? 2 : 3,
+  ).padStart(2, '0');
+
   return (
-    <AnimatePresence>
-      {artwork && project && (
-        <motion.div
-          key={artwork.id}
-          style={s.overlay}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <div style={s.content}>
-            {/* Back button */}
-            <motion.button
-              style={s.back}
-              onClick={onReturn}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 0.55, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              whileHover={{ opacity: 1 }}
-            >
-              ← Return to gallery
-            </motion.button>
+    <div className="project-overlay" style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      background: '#EDE8DF',
+      clipPath: expanded ? 'circle(150% at 50% 50%)' : 'circle(0% at 50% 50%)',
+      transition: 'clip-path 0.55s cubic-bezier(0.76,0,0.24,1)',
+      overflowY: 'auto',
+      fontFamily: SANS,
+    }}>
+      <button onClick={onReturn} style={{
+        position: 'fixed', top: '2rem', left: '2.5rem',
+        background: 'none', border: 'none', cursor: 'pointer',
+        fontFamily: 'inherit', fontSize: 11, letterSpacing: '0.22em',
+        textTransform: 'uppercase', color: 'rgba(26,22,20,0.50)',
+        padding: 0, zIndex: 101,
+      }}>
+        ← Back to Gallery
+      </button>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: '7rem 2.5rem 6rem' }}>
+        <div style={{ fontSize: 11, letterSpacing: '0.28em', color: '#6F1028', marginBottom: '1.5rem' }}>
+          {num} — SELECTED WORK
+        </div>
+        {image && (
+          <img
+            src={image}
+            alt={`${install.title} artwork`}
+            style={{
+              display: 'block', width: '100%',
+              aspectRatio: String(aspect),
+              objectFit: 'cover',
+              border: '1px solid rgba(26,22,20,0.10)',
+              boxShadow: '0 24px 60px rgba(26,22,20,0.14)',
+              marginBottom: '2.75rem',
+            }}
+          />
+        )}
 
-            {/* Eyebrow */}
-            <motion.p
-              style={s.eyebrow}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              {project.role}
-            </motion.p>
+        <h1 style={{
+          fontSize: 'clamp(2.6rem,6.5vw,5rem)', fontWeight: 100,
+          letterSpacing: '-0.02em', color: '#1A1614',
+          margin: '0 0 0.5rem', lineHeight: 1.0, textTransform: 'uppercase',
+        }}>
+          {install.title}
+        </h1>
+        <div style={{
+          fontSize: 12, letterSpacing: '0.18em', color: 'rgba(26,22,20,0.45)',
+          marginBottom: '2.5rem', textTransform: 'uppercase',
+        }}>
+          {install.role}
+        </div>
+        <div style={{ width: 50, height: 1, background: '#6F1028', marginBottom: '2.5rem' }} />
 
-            {/* Title */}
-            <motion.h1
-              style={s.title}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.55 }}
-            >
-              {project.title}
-            </motion.h1>
+        <Section heading="Overview">
+          <p style={{ fontSize: 15, lineHeight: 1.8, color: '#2A2826', fontWeight: 300, maxWidth: 640 }}>
+            {install.desc}
+          </p>
+        </Section>
 
-            {/* Visual canvas placeholder */}
-            <motion.div
-              style={s.canvas}
-              initial={{ opacity: 0, scaleX: 0.96 }}
-              animate={{ opacity: 1, scaleX: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              Project Visual
-            </motion.div>
-
-            <div style={s.divider} />
-
-            {/* Description */}
-            <motion.p
-              style={s.body}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              {project.description}
-            </motion.p>
-
-            {/* Tags */}
-            <motion.div
-              style={s.tagRow}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
-            >
-              {project.tags.map((tag) => (
-                <span key={tag} style={s.tag}>{tag}</span>
-              ))}
-            </motion.div>
-
-            {/* Links */}
-            <motion.div
-              style={{ display: 'flex', gap: 24 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.55, duration: 0.4 }}
-            >
-              <a
-                href="#"
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                  color: '#181818',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid rgba(24,24,24,0.3)',
-                  paddingBottom: 2,
-                }}
-              >
-                GitHub ↗
-              </a>
-              <a
-                href="#"
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '0.22em',
-                  textTransform: 'uppercase',
-                  color: '#181818',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid rgba(24,24,24,0.3)',
-                  paddingBottom: 2,
-                }}
-              >
-                Live Demo ↗
-              </a>
-            </motion.div>
+        <Section heading="Technology">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {install.tags.map(tag => (
+              <span key={tag} style={{
+                fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
+                color: '#1A1614', border: '1px solid rgba(26,22,20,0.18)',
+                padding: '0.3rem 0.7rem',
+              }}>
+                {tag}
+              </span>
+            ))}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </Section>
+
+        <div style={{ width: '100%', height: 1, background: 'rgba(26,22,20,0.08)', margin: '2.5rem 0' }} />
+
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          <a href={hero.socials.github} target="_blank" rel="noreferrer" style={{
+            fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
+            color: '#6F1028', textDecoration: 'none',
+            borderBottom: '1px solid rgba(111,16,40,0.35)', paddingBottom: '0.2rem',
+          }}>
+            GitHub ↗
+          </a>
+          <a href={`mailto:${hero.socials.email}`} style={{
+            fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
+            color: 'rgba(26,22,20,0.45)', textDecoration: 'none',
+            borderBottom: '1px solid rgba(26,22,20,0.18)', paddingBottom: '0.2rem',
+          }}>
+            Ask me about it ↗
+          </a>
+        </div>
+      </div>
+    </div>
   );
 }
