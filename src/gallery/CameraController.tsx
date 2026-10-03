@@ -1,143 +1,118 @@
-import { useRef, useEffect } from 'react';
+/**
+ * CameraController.tsx — PART B.5, B.10
+ * ─────────────────────────────────────────────────────────────────────────────
+ * The camera's X/Z come from the spline in layout.ts. Its Y does NOT: every
+ * frame a ray is fired straight down from the camera's own X/Z against the
+ * meshes tagged onto LAYER_FLOOR (ground slab, stair treads, landing, upper
+ * platform — see GalleryArchitecture). The hit is turned into
+ * `y = hit.y + EYE_HEIGHT` and damped, so stepping onto the staircase is a
+ * smooth climb instead of a jump, and FLOOR_SURFACES no longer exists.
+ *
+ * Pointer and progress are read from the mutable `scrollStore` inside useFrame,
+ * so moving the mouse or scrolling never re-renders the React tree.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+import { useMemo, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import {
-  PATH_POINTS, LOOKAT_POINTS,
-  FLOOR_SURFACES, EYE_HEIGHT,
-  CAM, type ArtworkDef,
-} from './constants';
+import { CAM, EYE_HEIGHT, LAYER_FLOOR, SHOTS, evalSpline, scrollStore } from './constants';
 
-const posCurve  = new THREE.CatmullRomCurve3(PATH_POINTS,   false, 'catmullrom', 0.5);
-const lookCurve = new THREE.CatmullRomCurve3(LOOKAT_POINTS, false, 'catmullrom', 0.5);
+/** How fast the camera settles onto a new ground height (higher = snappier). */
+const GROUND_LAMBDA = 9;
+/** How fast the dolly catches the target position. */
+const POS_LAMBDA = 6;
 
-function getFloorY(x: number, z: number): number {
-  let best = 0;
-  for (const s of FLOOR_SURFACES) {
-    if (x >= s.minX && x <= s.maxX && z >= s.minZ && z <= s.maxZ) {
-      if (s.y > best) best = s.y;
-    }
-  }
-  return best;
-}
+export default function CameraController() {
+  const camera = useThree(s => s.camera);
+  const scene = useThree(s => s.scene);
 
-interface Props {
-  scrollProgress: number;
-  mouseNorm:      { x: number; y: number };
-  artworkTarget:  ArtworkDef | null;
-  onApproachDone: () => void;
-  enabled:        boolean;
-}
-
-export default function CameraController({
-  scrollProgress, mouseNorm, artworkTarget, onApproachDone, enabled,
-}: Props) {
-  const { camera } = useThree();
-
-  const smoothT    = useRef(0);
-  const smoothLook = useRef(new THREE.Vector3());
-
-  // Approach state
-  const approaching    = useRef(false);
-  const approachDone   = useRef(false);
-  const approachAlpha  = useRef(0);
-  const holdTimer      = useRef(0);
-  const approachStart  = useRef(new THREE.Vector3());
-  const approachTarget = useRef(new THREE.Vector3());
-  const approachLookAt = useRef(new THREE.Vector3());
-
-  // WASD fallback
-  const keys = useRef({ w: false, s: false });
-  useEffect(() => {
-    const dn = (e: KeyboardEvent) => {
-      if (e.code === 'KeyW') keys.current.w = true;
-      if (e.code === 'KeyS') keys.current.s = true;
-    };
-    const up = (e: KeyboardEvent) => {
-      if (e.code === 'KeyW') keys.current.w = false;
-      if (e.code === 'KeyS') keys.current.s = false;
-    };
-    window.addEventListener('keydown', dn);
-    window.addEventListener('keyup',   up);
-    return () => { window.removeEventListener('keydown', dn); window.removeEventListener('keyup', up); };
+  const raycaster = useMemo(() => {
+    const r = new THREE.Raycaster();
+    r.layers.set(LAYER_FLOOR);   // only "floor" surfaces may be hit
+    r.far = 60;
+    return r;
   }, []);
 
-  useEffect(() => {
-    if (!artworkTarget) {
-      approaching.current   = false;
-      approachDone.current  = false;
-      approachAlpha.current = 0;
-      holdTimer.current     = 0;
-      return;
-    }
-    approaching.current   = true;
-    approachDone.current  = false;
-    approachAlpha.current = 0;
-    holdTimer.current     = 0;
-    approachStart.current.copy(camera.position);
+  const scratch = useMemo(() => ({
+    down: new THREE.Vector3(0, -1, 0),
+    worldUp: new THREE.Vector3(0, 1, 0),
+    origin: new THREE.Vector3(),
+    look: new THREE.Vector3(),
+    finalLook: new THREE.Vector3(),
+    toTarget: new THREE.Vector3(),
+    right: new THREE.Vector3(),
+    up: new THREE.Vector3(),
+  }), []);
 
-    // Stop 2.8 units in front of artwork face
-    const artPos = new THREE.Vector3(...artworkTarget.position);
-    const artRot = new THREE.Euler(...artworkTarget.rotation);
-    const fwd    = new THREE.Vector3(0, 0, 1).applyEuler(artRot);
-    approachTarget.current.copy(artPos).addScaledVector(fwd, CAM.approachDist);
-    approachTarget.current.y = artPos.y; // eye level = artwork centre
-    approachLookAt.current.copy(artPos);
-  }, [artworkTarget, camera]);
+  const smoothPos = useRef(new THREE.Vector3());
+  const smoothLook = useRef(new THREE.Vector3());
+  const groundY = useRef(0);
+  const swayT = useRef(0);
+  const primed = useRef(false);
 
   useFrame((_, delta) => {
-    if (!enabled) return;
+    const t = scrollStore.testT ?? scrollStore.progress;
+    const { pos, look } = evalSpline(t);
 
-    // ── Approach animation ──────────────────────────────────────────────
-    if (approaching.current && artworkTarget) {
-      if (approachAlpha.current < 1) {
-        approachAlpha.current = Math.min(1, approachAlpha.current + delta * 0.75);
-        const t = easeInOut(approachAlpha.current);
-        camera.position.lerpVectors(approachStart.current, approachTarget.current, t);
-        const lk = new THREE.Vector3().lerpVectors(
-          approachStart.current, approachLookAt.current, t,
-        );
-        camera.lookAt(lk);
-      } else {
-        // Hold for 220ms then fire done
-        holdTimer.current += delta;
-        camera.position.copy(approachTarget.current);
-        camera.lookAt(approachLookAt.current);
-        if (holdTimer.current > 0.22 && !approachDone.current) {
-          approachDone.current = true;
-          onApproachDone();
-        }
-      }
-      return;
+    // Deterministic mode: `?t=` pins the camera exactly, with no smoothing at
+    // all, so screenshots taken at the same t are identical.
+    const pinned = scrollStore.testT !== null;
+
+    if (!primed.current || pinned) {
+      smoothPos.current.set(pos[0], pos[1], pos[2]);
+      smoothLook.current.set(look[0], look[1], look[2]);
+      groundY.current = pos[1] - EYE_HEIGHT;
+      primed.current = true;
     }
 
-    // ── Scroll path ─────────────────────────────────────────────────────
-    smoothT.current += (scrollProgress - smoothT.current) * Math.min(1, delta / CAM.scrollDamp);
-    const t = THREE.MathUtils.clamp(smoothT.current, 0, 1);
+    if (!pinned) {
+      const pLerp = 1 - Math.pow(0.006, delta);
+      smoothPos.current.x = THREE.MathUtils.lerp(smoothPos.current.x, pos[0], pLerp);
+      smoothPos.current.z = THREE.MathUtils.lerp(smoothPos.current.z, pos[2], pLerp);
 
-    if (keys.current.w) smoothT.current = Math.min(1, smoothT.current + delta * 0.012);
-    if (keys.current.s) smoothT.current = Math.max(0, smoothT.current - delta * 0.012);
+      const lLerp = 1 - Math.pow(0.004, delta);
+      scratch.look.set(look[0], look[1], look[2]);
+      smoothLook.current.lerp(scratch.look, lLerp);
+    } else {
+      smoothLook.current.set(look[0], look[1], look[2]);
+    }
 
-    const pathPos  = posCurve.getPoint(t);
-    const pathLook = lookCurve.getPoint(t);
+    // ── Floor raycast (PART B.5) ────────────────────────────────────────────
+    scratch.origin.set(
+      smoothPos.current.x,
+      smoothPos.current.y + 4,
+      smoothPos.current.z,
+    );
+    raycaster.set(scratch.origin, scratch.down);
+    const hits = raycaster.intersectObjects(scene.children, true);
+    const hitY = hits.length > 0 ? hits[0].point.y : groundY.current;
+    groundY.current = pinned
+      ? hitY
+      : THREE.MathUtils.damp(groundY.current, hitY, GROUND_LAMBDA, delta);
+    smoothPos.current.y = groundY.current + EYE_HEIGHT;
 
-    // Y elevation from floor surfaces
-    const floorY = getFloorY(pathPos.x, pathPos.z);
-    pathPos.y = floorY + EYE_HEIGHT;
+    // ── Breathing sway + pointer parallax, both from the mutable store ──────
+    swayT.current += delta * 0.4;
+    const swayX = Math.sin(swayT.current * 0.7) * 0.018;
+    const swayY = Math.sin(swayT.current * 0.5) * 0.010;
 
-    // Mouse parallax — perpendicular to travel
-    const tangent = posCurve.getTangent(Math.max(0.001, Math.min(0.999, t)));
-    const right   = new THREE.Vector3().crossVectors(tangent, new THREE.Vector3(0, 1, 0)).normalize();
-    pathPos.addScaledVector(right, mouseNorm.x * CAM.parallaxAmt * 1.5);
-    pathPos.y += mouseNorm.y * CAM.parallaxAmt * 0.5;
+    scratch.toTarget.copy(smoothLook.current).sub(smoothPos.current).normalize();
+    scratch.right.crossVectors(scratch.toTarget, scratch.worldUp).normalize();
+    scratch.up.crossVectors(scratch.right, scratch.toTarget).normalize();
 
-    camera.position.lerp(pathPos, Math.min(1, delta * 6));
-    smoothLook.current.lerp(pathLook, Math.min(1, delta * 5));
-    camera.lookAt(smoothLook.current);
+    scratch.finalLook.copy(smoothLook.current);
+    if (!pinned) {
+      scratch.finalLook
+        .addScaledVector(scratch.right, scrollStore.mouseX * CAM.maxYaw * 3.0 + swayX)
+        .addScaledVector(scratch.up, -scrollStore.mouseY * CAM.maxPitch * 2.0 + swayY);
+    }
+
+    camera.position.copy(smoothPos.current);
+    camera.lookAt(scratch.finalLook);
   });
 
   return null;
 }
 
-function easeInOut(t: number): number {
-  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-}
+/** Exported for the debug harness / tests. */
+export const CAMERA_SHOT_COUNT = SHOTS.length;
