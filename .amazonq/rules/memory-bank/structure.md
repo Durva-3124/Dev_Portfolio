@@ -1,94 +1,98 @@
 # Project Structure
 
 ## Directory Layout
-
 ```
 Dev_Portfolio/
 ├── public/
-│   ├── models/          # 3D model assets (GLTF/GLB files)
+│   ├── models/          # 3D model assets (.glb/.gltf)
 │   ├── favicon.svg
-│   ├── icons.svg
-│   └── _redirects       # Netlify/Vercel SPA redirect rule
+│   └── icons.svg
 ├── src/
-│   ├── App.tsx          # Root — mounts GalleryWorld in full-screen Suspense
-│   ├── main.tsx         # React DOM entry point
-│   ├── index.css        # Global styles
-│   ├── App.css
-│   ├── assets/          # Static images (hero.png, SVGs)
+│   ├── assets/          # Static images (hero.png, svgs)
 │   ├── components/
-│   │   ├── layout/      # Structural UI: Navbar, Footer, ScrollProgress
-│   │   └── ui/          # Reusable UI primitives (see below)
-│   ├── data/            # Static content/data layer
-│   │   ├── portfolio.ts # Projects, skills, experience data
-│   │   ├── personal.ts  # Personal info, bio
-│   │   └── index.ts     # Re-exports
-│   ├── gallery/         # 3D gallery world (active Phase 1 entry point)
-│   │   ├── GalleryWorld.tsx       # Top-level R3F Canvas + scene composition
-│   │   ├── GalleryArchitecture.tsx # Gallery room geometry/meshes
-│   │   ├── GalleryLighting.tsx    # Scene lighting setup
-│   │   ├── PlayerController.tsx   # Player movement & camera control
-│   │   └── constants.ts           # Gallery dimensions, config constants
-│   ├── hooks/           # Custom React hooks
-│   ├── pages/           # Route-level pages (NotFound)
-│   ├── sections/        # Portfolio content sections (preserved, Phase 6)
-│   ├── three/           # Reusable Three.js/R3F components
-│   └── utils/           # Pure utility functions
+│   │   ├── layout/      # Navbar, Footer, ScrollProgress
+│   │   └── ui/          # Reusable UI: GlassCard, TiltCard, MagneticButton,
+│   │                    #   CustomCursor, Preloader, ProjectModal,
+│   │                    #   SectionReveal, SpeechBubble, Timeline
+│   ├── data/
+│   │   ├── portfolio.ts # All portfolio content (hero, about, skills,
+│   │   │                #   experience, projects, education, certifications, contact)
+│   │   ├── personal.ts  # Personal branding (accent colors, avatar quotes, interests)
+│   │   └── index.ts     # Re-exports from data files
+│   ├── gallery/         # 3D gallery world (core feature)
+│   │   ├── assets/
+│   │   │   └── HeroArch.tsx        # Architectural 3D arch element
+│   │   ├── GalleryWorld.tsx        # Root gallery scene orchestrator
+│   │   ├── GalleryArchitecture.tsx # Gallery walls/floor/ceiling geometry
+│   │   ├── GalleryLighting.tsx     # Three.js lighting setup
+│   │   ├── ProjectArtworks.tsx     # Project cards rendered as gallery artworks
+│   │   ├── ProjectExperience.tsx   # Project detail experience layer
+│   │   ├── CameraController.tsx    # Camera movement and navigation
+│   │   └── constants.ts            # Gallery layout constants
+│   ├── hooks/
+│   │   ├── useActiveSection.ts     # Tracks active scroll section
+│   │   ├── useKonami.ts            # Konami code easter egg
+│   │   ├── useReducedMotion.ts     # Accessibility: prefers-reduced-motion
+│   │   ├── useSmoothScroll.ts      # Lenis smooth scroll integration
+│   │   ├── useTheme.ts             # Dark/light theme management
+│   │   ├── useThreePerformance.ts  # Three.js performance monitoring
+│   │   └── useTypewriter.ts        # Typewriter text animation
+│   ├── pages/
+│   │   └── NotFound.tsx            # 404 page
+│   ├── sections/        # Full-page portfolio sections
+│   │   ├── Hero.tsx, About.tsx, Skills.tsx, Experience.tsx
+│   │   ├── Projects.tsx, Education.tsx, Certifications.tsx
+│   │   ├── BeyondCode.tsx, MyDesk.tsx, Contact.tsx
+│   ├── three/           # Standalone Three.js/R3F components
+│   │   ├── Avatar.tsx          # Animated 3D avatar character
+│   │   ├── FloatingWidget.tsx  # Floating 3D UI element
+│   │   ├── Hero3DScene.tsx     # Hero section 3D scene
+│   │   ├── Lights.tsx          # Reusable lighting component
+│   │   ├── MyDeskScene.tsx     # Interactive desk 3D scene
+│   │   ├── ParticleStarfield.tsx # Particle system background
+│   │   ├── Preloader3D.tsx     # 3D loading animation
+│   │   ├── SceneCanvas.tsx     # R3F Canvas wrapper
+│   │   ├── SceneFallback.tsx   # Fallback for WebGL failures
+│   │   └── SkillSphere.tsx     # 3D skill visualization
+│   ├── utils/
+│   │   └── sectionScrollProgress.ts # Scroll progress calculation
+│   ├── App.tsx          # Root component — mounts GalleryWorld in Suspense
+│   ├── main.tsx         # Entry point
+│   ├── App.css          # Global app styles
+│   └── index.css        # Tailwind base + custom CSS variables
 ├── .amazonq/rules/memory-bank/  # Memory Bank documentation
-├── .trae/specs/         # Project specs and task tracking
+├── .trae/specs/         # Project specs and tasks
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.js
 ├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
-├── .oxlintrc.json
-└── vercel.json
+├── .oxlintrc.json       # Oxlint configuration
+└── vercel.json          # Vercel deployment config
 ```
 
-## Core Components & Relationships
+## Core Architectural Patterns
 
-### Entry Flow
-`main.tsx` → `App.tsx` → `GalleryWorld` (R3F Canvas) → `GalleryArchitecture` + `GalleryLighting` + `PlayerController` + `Avatar`
+### 1. Gallery-First Architecture
+App.tsx → GalleryWorld (3D canvas) is the primary entry point. Traditional sections are embedded within or alongside the 3D world, not the other way around.
 
-### UI Components (`src/components/ui/`)
-| Component | Purpose |
-|---|---|
-| CustomCursor | Replaces default cursor with branded cursor |
-| GlassCard | Glassmorphism card container |
-| MagneticButton | Button with magnetic hover effect |
-| Preloader | Initial loading screen |
-| ProjectModal | Full-screen project detail overlay |
-| SectionReveal | Scroll-triggered reveal animation wrapper |
-| SpeechBubble | Tooltip/speech bubble UI element |
-| TiltCard | 3D tilt-on-hover card |
-| Timeline | Vertical timeline for experience/education |
+### 2. Data/View Separation
+All content lives in `src/data/` as plain TypeScript objects. Components consume data via imports — no prop drilling of raw strings.
 
-### Three.js Components (`src/three/`)
-| Component | Purpose |
-|---|---|
-| Avatar | Animated 3D character |
-| FloatingWidget | Floating 3D UI element |
-| Hero3DScene | Hero section 3D background |
-| Lights | Reusable lighting presets |
-| MyDeskScene | Interactive desk scene |
-| ParticleStarfield | Particle background effect |
-| Preloader3D | 3D loading animation |
-| SceneCanvas | R3F Canvas wrapper with defaults |
-| SceneFallback | Fallback for WebGL unavailability |
-| SkillSphere | Skill tags on a 3D sphere |
+### 3. Three.js Layer Separation
+- `src/three/` — generic, reusable 3D components (Avatar, Lights, SceneCanvas)
+- `src/gallery/` — domain-specific 3D gallery world components
 
-### Hooks (`src/hooks/`)
-| Hook | Purpose |
-|---|---|
-| useActiveSection | Tracks which section is in viewport |
-| useKonami | Detects Konami code input |
-| useReducedMotion | Respects prefers-reduced-motion |
-| useSmoothScroll | Lenis smooth scroll integration |
-| useTheme | Theme state management |
-| useThreePerformance | R3F performance monitoring |
-| useTypewriter | Typewriter text animation |
+### 4. Custom Hooks for Side Effects
+All browser APIs, scroll logic, animation state, and performance monitoring are encapsulated in `src/hooks/`.
 
-## Architectural Patterns
-- **Phase-based development**: App.tsx comment documents phases; sections preserved for future integration
-- **Data/UI separation**: All content lives in `src/data/`, components are purely presentational
-- **Path alias**: `@/` maps to `src/` (configured in vite.config.ts and tsconfig)
-- **Lazy loading**: `Suspense` wraps the entire 3D world for async model loading
-- **Component co-location**: Gallery-specific logic stays in `src/gallery/`, reusable 3D in `src/three/`
+### 5. Component Hierarchy
+```
+App
+└── GalleryWorld (R3F Canvas)
+    ├── GalleryArchitecture
+    ├── GalleryLighting
+    ├── ProjectArtworks
+    ├── CameraController
+    └── Avatar / FloatingWidget / ParticleStarfield
+```
+Traditional sections (Hero, About, etc.) render as HTML overlays or within the gallery flow.
