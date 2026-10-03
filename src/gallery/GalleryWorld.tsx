@@ -1,292 +1,278 @@
+/**
+ * GalleryWorld.tsx — PART B.10, B.11
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Input rules:
+ *   • wheel / touch / keys write into the mutable `scrollStore` and nothing else
+ *   • while the project overlay is open (`scrollStore.locked`) the handlers
+ *     return BEFORE preventDefault(), so the overlay's own scroller works
+ *   • the custom cursor is animated imperatively from a ref — pointer position is
+ *     never React state
+ *   • `?t=0..1` pins the scroll progress for deterministic screenshot testing
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 import {
   Suspense, useRef, useState, useEffect, useCallback,
   type CSSProperties,
 } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
-import { CAM, C, type ArtworkDef } from './constants';
+import {
+  ARTWORKS, BG_COLOR, CAM, SCROLL_TOTAL, cursorStore, scrollStore, type InstallDef,
+} from './constants';
+import { warmArtworkTextures, readyTextureIds } from './artworkTextures';
 import GalleryArchitecture from './GalleryArchitecture';
 import GalleryLighting     from './GalleryLighting';
 import CameraController    from './CameraController';
 import ProjectArtworks     from './ProjectArtworks';
 import ProjectExperience   from './ProjectExperience';
+import EntranceRoom        from './rooms/EntranceRoom';
+import AboutRoom           from './rooms/AboutRoom';
+import SkillsRoom          from './rooms/SkillsRoom';
+import ExperienceRoom      from './rooms/ExperienceRoom';
+import UpperGalleryRoom    from './rooms/UpperGalleryRoom';
+import ContactRoom         from './rooms/ContactRoom';
+import MuseumUI            from './ui/MuseumUI';
 
-// ─── Scroll progress hook ─────────────────────────────────────────────────────
-function useScrollProgress() {
-  const [progress, setProgress] = useState(0);
-  const touchStartY = useRef(0);
-  const accumulated = useRef(0);
-
+// ─── Scroll / pointer / keyboard input → mutable store, zero re-renders ──────
+function useGalleryInput() {
   useEffect(() => {
-    // Desktop wheel
+    const release = () => { scrollStore.testT = null; };
+
     const onWheel = (e: WheelEvent) => {
+      // The project overlay owns the scroll while it is open. Returning BEFORE
+      // preventDefault() is what makes the overlay scrollable.
+      if (scrollStore.locked) return;
       e.preventDefault();
-      accumulated.current += e.deltaY * 0.00045;
-      accumulated.current  = Math.max(0, Math.min(1, accumulated.current));
-      setProgress(accumulated.current);
-    };
-    // Mobile touch
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
-    const onTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      const dy = touchStartY.current - e.touches[0].clientY;
-      touchStartY.current = e.touches[0].clientY;
-      accumulated.current += dy * 0.0012;
-      accumulated.current  = Math.max(0, Math.min(1, accumulated.current));
-      setProgress(accumulated.current);
+      release();
+      scrollStore.raw = Math.max(0, Math.min(SCROLL_TOTAL, scrollStore.raw + e.deltaY * 0.88));
+      scrollStore.progress = scrollStore.raw / SCROLL_TOTAL;
+      scrollStore.velocity = e.deltaY;
     };
 
-    window.addEventListener('wheel',      onWheel,      { passive: false });
-    window.addEventListener('touchstart', onTouchStart, { passive: true  });
-    window.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    let touchY = 0;
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0].clientY; };
+    const onTouchMove = (e: TouchEvent) => {
+      if (scrollStore.locked) return;      // same rule as the wheel handler
+      e.preventDefault();
+      release();
+      const dy = touchY - e.touches[0].clientY;
+      touchY = e.touches[0].clientY;
+      scrollStore.raw = Math.max(0, Math.min(SCROLL_TOTAL, scrollStore.raw + dy * 2.2));
+      scrollStore.progress = scrollStore.raw / SCROLL_TOTAL;
+      scrollStore.velocity = dy * 10;
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (scrollStore.locked) return;
+      const step = 0.012;
+      let p = scrollStore.progress;
+      if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S' || e.key === 'PageDown') p += step;
+      else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === 'PageUp') p -= step;
+      else if (e.key === 'Home') p = 0;
+      else if (e.key === 'End') p = 1;
+      else return;
+      e.preventDefault();
+      release();
+      p = Math.max(0, Math.min(1, p));
+      scrollStore.progress = p;
+      scrollStore.raw = p * SCROLL_TOTAL;
+    };
+
+    const onMove = (e: MouseEvent) => {
+      scrollStore.mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      scrollStore.mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('mousemove', onMove);
     return () => {
-      window.removeEventListener('wheel',      onWheel);
+      window.removeEventListener('wheel', onWheel);
       window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove',  onTouchMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('mousemove', onMove);
     };
   }, []);
+}
 
+// ─── ?t=0..1 debug hook (PART C.2) ──────────────────────────────────────────
+function useUrlProgress() {
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get('t');
+    if (raw === null) return;
+    const v = Number(raw);
+    if (!Number.isFinite(v)) return;
+    const t = Math.max(0, Math.min(1, v));
+    scrollStore.testT = t;
+    scrollStore.progress = t;
+    scrollStore.raw = t * SCROLL_TOTAL;
+  }, []);
+}
+
+/**
+ * Debug harness API (PART C.2). Lets the screenshot script jump the camera to a
+ * given progress without re-navigating, which matters because creating and
+ * tearing down a WebGL context per shot is prohibitively slow under software
+ * rendering. `?t=` remains the primary, spec'd entry point.
+ */
+function useDebugApi() {
+  useEffect(() => {
+    (window as unknown as { __gallery?: unknown }).__gallery = {
+      setT(t: number) {
+        const v = Math.max(0, Math.min(1, t));
+        scrollStore.testT = v;
+        scrollStore.progress = v;
+        scrollStore.raw = v * SCROLL_TOTAL;
+        return v;
+      },
+      getT() { return scrollStore.testT ?? scrollStore.progress; },
+      release() { scrollStore.testT = null; },
+      /** which artwork canvases are built (diagnostics for PART C.2) */
+      textures: readyTextureIds,
+      artworks: ARTWORKS.map(a => ({
+        id: a.id, room: a.room, wall: a.wall,
+        surface: a.surface, normal: a.normal, yaw: a.yaw,
+      })),
+    };
+  }, []);
+}
+
+// ─── Throttled progress snapshot — discrete UI only ─────────────────────────
+function useUiProgress() {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const p = scrollStore.testT ?? scrollStore.progress;
+      setProgress(prev => (Math.abs(p - prev) > 0.004 ? p : prev));
+    }, 120);
+    return () => clearInterval(id);
+  }, []);
   return progress;
 }
-
-// ─── Mouse normalised position ────────────────────────────────────────────────
-function useMouseNorm() {
-  const [norm, setNorm] = useState({ x: 0, y: 0 });
+// ─── Custom cursor — imperative, never React state (PART B.10) ───────────────
+function GalleryCursor() {
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      setNorm({
-        x: (e.clientX / window.innerWidth)  * 2 - 1,
-        y: (e.clientY / window.innerHeight) * 2 - 1,
-      });
+    let raf = 0;
+    let x = -100, y = -100, lastView: boolean | null = null;
+    const onMove = (e: MouseEvent) => { x = e.clientX; y = e.clientY; };
+    const tick = () => {
+      const el = ref.current;
+      if (el) {
+        el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+        if (lastView !== cursorStore.view) {
+          lastView = cursorStore.view;
+          el.dataset.view = cursorStore.view ? 'true' : 'false';
+        }
+      }
+      raf = requestAnimationFrame(tick);
     };
     window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
+    raf = requestAnimationFrame(tick);
+    return () => { window.removeEventListener('mousemove', onMove); cancelAnimationFrame(raf); };
   }, []);
-  return norm;
-}
-
-// ─── Custom cursor ────────────────────────────────────────────────────────────
-function GalleryCursor({ hovered }: { hovered: boolean }) {
-  const [pos, setPos] = useState({ x: -100, y: -100 });
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY });
-    window.addEventListener('mousemove', onMove);
-    return () => window.removeEventListener('mousemove', onMove);
-  }, []);
-
-  const size = hovered ? 48 : 8;
   return (
-    <div style={{
-      position: 'fixed',
-      left: pos.x,
-      top:  pos.y,
-      width:  size,
-      height: size,
-      borderRadius: '50%',
-      border: hovered ? '1px solid rgba(24,24,24,0.5)' : 'none',
-      background: hovered ? 'transparent' : 'rgba(24,24,24,0.75)',
-      transform: 'translate(-50%, -50%)',
-      pointerEvents: 'none',
-      zIndex: 50,
-      transition: 'width 0.18s ease, height 0.18s ease, background 0.18s ease',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 8,
-      letterSpacing: '0.14em',
-      color: '#181818',
-    }}>
-      {hovered ? 'VIEW' : null}
+    <div ref={ref} className="gallery-cursor">
+      <span className="gallery-cursor__label">VIEW</span>
     </div>
   );
 }
 
-// ─── Scroll indicator ─────────────────────────────────────────────────────────
-function ScrollIndicator({ progress }: { progress: number }) {
-  if (progress > 0.04) return null;
-  return (
-    <div style={{
-      position: 'fixed',
-      bottom: '2rem',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '0.5rem',
-      pointerEvents: 'none',
-      zIndex: 10,
-      opacity: Math.max(0, 1 - progress * 25),
-      transition: 'opacity 0.3s',
-    }}>
-      <div style={{
-        width: 1,
-        height: 40,
-        background: 'rgba(24,24,24,0.25)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          background: 'rgba(24,24,24,0.6)',
-          animation: 'scrollPulse 1.8s ease-in-out infinite',
-          height: '40%',
-        }} />
-      </div>
-      <p style={{
-        fontFamily: '"Helvetica Neue", Inter, Arial, sans-serif',
-        fontSize: 10,
-        letterSpacing: '0.22em',
-        textTransform: 'uppercase',
-        color: 'rgba(24,24,24,0.45)',
-      }}>
-        Scroll
-      </p>
-      <style>{`
-        @keyframes scrollPulse {
-          0%   { transform: translateY(-100%); }
-          100% { transform: translateY(300%); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Progress bar ─────────────────────────────────────────────────────────────
-function ProgressBar({ progress }: { progress: number }) {
-  return (
-    <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 1,
-      background: 'rgba(24,24,24,0.08)',
-      zIndex: 10,
-      pointerEvents: 'none',
-    }}>
-      <div style={{
-        height: '100%',
-        width: `${progress * 100}%`,
-        background: 'rgba(24,24,24,0.35)',
-        transition: 'width 0.1s linear',
-      }} />
-    </div>
-  );
-}
-
-// ─── Scene setup ──────────────────────────────────────────────────────────────
-function SceneSetup() {
+// ─── Scene background ────────────────────────────────────────────────────────
+function SceneBg() {
   return (
     <>
-      <color attach="background" args={[C.bg]} />
-      <fog attach="fog" args={[C.bg, 55, 120]} />
+      <color attach="background" args={[BG_COLOR]} />
+      <fog attach="fog" args={[BG_COLOR, 70, 150]} />
     </>
   );
 }
 
-// ─── Main export ──────────────────────────────────────────────────────────────
+// ─── Main export ─────────────────────────────────────────────────────────────
 export default function GalleryWorld() {
-  const scrollProgress = useScrollProgress();
-  const mouseNorm      = useMouseNorm();
+  useGalleryInput();
+  useUrlProgress();
+  useDebugApi();
+  const uiProgress = useUiProgress();
 
-  const [selectedArtwork,  setSelectedArtwork]  = useState<ArtworkDef | null>(null);
-  const [approachingArt,   setApproachingArt]   = useState<ArtworkDef | null>(null);
-  const [showProject,      setShowProject]       = useState(false);
-  const [cursorHovered,    setCursorHovered]     = useState(false);
-  const savedScrollRef     = useRef(0);
-
-  // Artwork selected → start cinematic approach
-  const handleArtworkSelect = useCallback((def: ArtworkDef) => {
-    savedScrollRef.current = scrollProgress;
-    setApproachingArt(def);
-    setSelectedArtwork(def);
-    setCursorHovered(false);
-  }, [scrollProgress]);
-
-  // Approach animation done → show project overlay
-  const handleApproachDone = useCallback(() => {
-    setShowProject(true);
-  }, []);
-
-  // Return from project
-  const handleReturn = useCallback(() => {
-    setShowProject(false);
-    // Small delay so overlay fades before camera pulls back
-    setTimeout(() => {
-      setApproachingArt(null);
-      setSelectedArtwork(null);
-    }, 400);
-  }, []);
-
-  // Cursor: detect pointer over canvas (artworks set hovered via Html)
   useEffect(() => {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return;
-    const over = () => {};
-    const out  = () => setCursorHovered(false);
-    canvas.addEventListener('pointerover', over);
-    canvas.addEventListener('pointerout',  out);
-    return () => {
-      canvas.removeEventListener('pointerover', over);
-      canvas.removeEventListener('pointerout',  out);
-    };
+    // PART B.8 — build every canvas while idle, never on the critical path
+    warmArtworkTextures(ARTWORKS.map(a => a.id));
+  }, []);
+
+  const [activeInstall, setActiveInstall] = useState<InstallDef | null>(null);
+  const [showCase, setShowCase] = useState(false);
+
+  const handleSelect = useCallback((def: InstallDef) => {
+    scrollStore.locked = true;
+    cursorStore.view = false;
+    setActiveInstall(def);
+    setShowCase(true);
+  }, []);
+
+  const handleReturn = useCallback(() => {
+    setShowCase(false);
+    setTimeout(() => {
+      setActiveInstall(null);
+      scrollStore.locked = false;
+    }, 550);
+  }, []);
+
+  const handleRoomJump = useCallback((t: number) => {
+    scrollStore.testT = null;
+    scrollStore.raw = t * SCROLL_TOTAL;
+    scrollStore.progress = t;
   }, []);
 
   const canvasStyle: CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    width: '100vw',
-    height: '100vh',
-    display: 'block',
-    cursor: 'none',
+    position: 'fixed', inset: 0,
+    width: '100vw', height: '100vh',
+    display: 'block', cursor: 'none',
   };
 
   return (
     <>
-      {/* Hide default cursor */}
-      <style>{`* { cursor: none !important; }`}</style>
+      {/* The real cursor is only hidden while the gallery, not the overlay, is up */}
+      {!showCase && <style>{`* { cursor: none !important; }`}</style>}
 
       <Canvas
-        shadows={{ type: THREE.PCFSoftShadowMap }}
+        // three r186 removed PCFSoftShadowMap; PCFShadowMap is the supported
+        // soft-ish option (VSM is the alternative).
+        shadows={{ type: THREE.PCFShadowMap }}
         gl={{
-          antialias: true,
-          alpha: false,
+          antialias: true, alpha: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.95,
+          toneMappingExposure: CAM.exposure,      // 0.9 (PART B.9)
         }}
         dpr={[1, Math.min(window.devicePixelRatio, 1.5)]}
         camera={{ fov: CAM.fov, near: CAM.near, far: CAM.far }}
         style={canvasStyle}
       >
-        <SceneSetup />
+        <SceneBg />
         <Suspense fallback={null}>
           <GalleryLighting />
           <GalleryArchitecture />
-          <ProjectArtworks onSelect={handleArtworkSelect} />
+          <ProjectArtworks onSelect={handleSelect} />
+          {/* Room content — every position comes from layout.ts */}
+          <EntranceRoom />
+          <AboutRoom />
+          <SkillsRoom />
+          <ExperienceRoom />
+          <UpperGalleryRoom />
+          <ContactRoom />
         </Suspense>
-        <CameraController
-          scrollProgress={scrollProgress}
-          mouseNorm={mouseNorm}
-          artworkTarget={approachingArt}
-          onApproachDone={handleApproachDone}
-          enabled={!showProject}
-        />
+        <CameraController />
       </Canvas>
 
-      <GalleryCursor hovered={cursorHovered} />
-      <ScrollIndicator progress={scrollProgress} />
-      <ProgressBar     progress={scrollProgress} />
+      <GalleryCursor />
+      <MuseumUI progress={uiProgress} onRoomJump={handleRoomJump} />
 
-      {/* Project detail overlay */}
       <ProjectExperience
-        artwork={showProject ? selectedArtwork : null}
+        install={showCase ? activeInstall : null}
         onReturn={handleReturn}
       />
     </>
