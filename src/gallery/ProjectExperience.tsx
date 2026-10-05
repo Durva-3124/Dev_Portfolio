@@ -141,13 +141,10 @@ export default function ProjectExperience({ install, onReturn }: Props) {
         <div style={{ width: '100%', height: 1, background: 'rgba(26,22,20,0.08)', margin: '2.5rem 0' }} />
 
         <div style={{ display: 'flex', gap: '2rem' }}>
-          <a href={hero.socials.github} target="_blank" rel="noreferrer" style={{
-            fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-            color: '#6F1028', textDecoration: 'none',
-            borderBottom: '1px solid rgba(111,16,40,0.35)', paddingBottom: '0.2rem',
-          }}>
-            GitHub ↗
-          </a>
+          {/* Phase 3, Step 1: `src/data/portfolio.ts` has NO per-project
+              repository URL field, so the GitHub link is hidden here rather
+              than pointed at the GitHub *profile* root (hero.socials.github),
+              which would misrepresent a specific project. */}
           <a href={`mailto:${hero.socials.email}`} style={{
             fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
             color: 'rgba(26,22,20,0.45)', textDecoration: 'none',
