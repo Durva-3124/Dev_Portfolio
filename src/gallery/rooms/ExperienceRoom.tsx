@@ -55,8 +55,9 @@ export default function ExperienceRoom() {
             <div style={{ fontSize: 10, color: 'rgba(26,22,20,0.55)', marginBottom: 5, letterSpacing: '0.08em' }}>
               {exp.company}
             </div>
+            {/* Full description — nothing is lost versus src/data (Phase 3, Step 1). */}
             <div style={{ fontSize: 9.5, lineHeight: 1.65, color: 'rgba(26,22,20,0.60)', fontWeight: 300, maxWidth: 240 }}>
-              {exp.description.slice(0, 120)}{exp.description.length > 120 ? '…' : ''}
+              {exp.description}
             </div>
           </div>
         </Html>
