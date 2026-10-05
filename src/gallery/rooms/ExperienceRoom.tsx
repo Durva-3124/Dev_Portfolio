@@ -46,9 +46,13 @@ export default function ExperienceRoom() {
             borderLeft: '2px solid #6F1028',
             paddingLeft: 10,
           }}>
-            <div style={{ fontSize: 8, letterSpacing: '0.22em', color: '#6F1028', textTransform: 'uppercase', marginBottom: 3 }}>
-              {exp.period || 'Present'}
-            </div>
+            {/* The period is rendered ONLY when `src/data` supplies one — no
+                invented "Present" fallback (Phase 3, Step 1). */}
+            {exp.period ? (
+              <div style={{ fontSize: 8, letterSpacing: '0.22em', color: '#6F1028', textTransform: 'uppercase', marginBottom: 3 }}>
+                {exp.period}
+              </div>
+            ) : null}
             <div style={{ fontSize: 12, fontWeight: 500, color: '#1A1614', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {exp.role}
             </div>
