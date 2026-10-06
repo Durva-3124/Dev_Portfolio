@@ -1,0 +1,1 @@
+/* TEMPORARY generator — deleted after producing public/og-image.png (Phase 3, Step 1). */
