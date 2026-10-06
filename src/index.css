@@ -94,3 +94,20 @@ canvas {
 .project-overlay { scrollbar-width: thin; }
 .project-overlay::-webkit-scrollbar { display: block; width: 8px; }
 .project-overlay::-webkit-scrollbar-thumb { background: rgba(26, 22, 20, 0.22); }
+
+/* ── Global focus ring ───────────────────────────────────────────────────────
+   Visible on keyboard navigation; hidden on pointer interaction via :focus-visible. */
+:focus-visible {
+  outline: 2px solid #6F1028;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Gallery nav bar ─────────────────────────────────────────────────────────
+   Hover states for nav buttons/links — pointer devices only. */
+@media (hover: hover) and (pointer: fine) {
+  .gallery-nav-link:hover {
+    color: #6F1028 !important;
+    border-color: rgba(111,16,40,0.35) !important;
+  }
+}
