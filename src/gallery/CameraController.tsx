@@ -19,8 +19,6 @@ import { CAM, EYE_HEIGHT, LAYER_FLOOR, SHOTS, evalSpline, scrollStore } from './
 
 /** How fast the camera settles onto a new ground height (higher = snappier). */
 const GROUND_LAMBDA = 9;
-/** How fast the dolly catches the target position. */
-const POS_LAMBDA = 6;
 
 export default function CameraController() {
   const camera = useThree(s => s.camera);
