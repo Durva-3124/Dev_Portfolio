@@ -568,4 +568,15 @@ export const ROOM_ZONES: RoomZone[] = [
 export function zoneForProgress(t: number): RoomZone {
   return ROOM_ZONES.find(r => t >= r.tRange[0] && t <= r.tRange[1]) ?? ROOM_ZONES[0];
 }
+
+/** Hash fragment for each zone id, e.g. 'vestibule' → '#vestibule'. */
+export const ZONE_HASH: Record<string, string> = Object.fromEntries(
+  ROOM_ZONES.map(r => [r.id, '#' + r.id]),
+);
+
+/** Return the zone whose hash matches `hash` (leading # optional). */
+export function zoneForHash(hash: string): RoomZone | undefined {
+  const id = hash.replace(/^#/, '').split('/')[0];
+  return ROOM_ZONES.find(r => r.id === id);
+}
 // __APPEND_6__
