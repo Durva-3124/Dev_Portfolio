@@ -1,0 +1,21 @@
+﻿
+=== F-06 Experience description ===
+  [PASS] "Web Developer Intern" description rendered in full ΓÇö data=335 chars, present=true
+  [PASS] "AI/ML Intern" description rendered in full ΓÇö data=262 chars, present=true
+  [PASS] "Technical Co-Head" description rendered in full ΓÇö data=160 chars, present=true
+  [PASS] 120-char truncated prefix is NOT the rendered whole ΓÇö prefix120 present=true
+  [PASS] no truncation ellipsis "ΓÇª" anywhere in the DOM
+
+=== F-09 invented "Present" ===
+  [PASS] "Technical Co-Head" (period='') shows no "Present" ΓÇö panel text starts: "Technical Co-HeadApp Club, PESMCOEDeveloped and maintained the officia"
+
+=== Overlay GitHub link ===
+  [PASS] overlay opened by clicking the framed artwork ΓÇö 538 chars
+  [PASS] overlay contains NO GitHub link text
+  [PASS] overlay still offers the mailto contact affordance
+  [PASS] no overlay anchor points at the GitHub profile root ΓÇö anchors: ["mailto:pawardurva273@gmail.com"]
+
+=== CONSOLE (errors/warnings) ===
+(clean)
+
+=== STEP 1: ALL CHECKS PASS ===

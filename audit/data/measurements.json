@@ -1,0 +1,195 @@
+{
+  "build": {
+    "chunks": {
+      "index-C3q_gwHN.js": { "raw_kb": 57.80, "gzip_kb": 17.26 },
+      "three-_v0QAowd.js": { "raw_kb": 1384.90, "gzip_kb": 416.68 },
+      "rolldown-runtime-hePW80VL.js": { "raw_kb": 0.71, "gzip_kb": 0.42 },
+      "index-Dd_EAcso.css": { "raw_kb": 22.10, "gzip_kb": 5.08 }
+    },
+    "motion_chunk": "ABSENT — framer-motion tree-shaken out",
+    "exit_code": 0,
+    "note": "three chunk 1384 kB raw / 417 kB gzip exceeds 500 kB Vite warning threshold"
+  },
+  "screenshots": {
+    "desktop_1440x900": {
+      "webgl": true,
+      "textures_built": ["meetsync-ai","bullsight","tejalens","name-plate"],
+      "shots_captured": 11,
+      "console_errors": 0
+    },
+    "mobile_390x844": {
+      "webgl": true,
+      "textures_built": ["meetsync-ai","bullsight","tejalens","name-plate"],
+      "shots_captured": 4,
+      "console_errors": 0,
+      "note": "Script output truncated at t=0.4; shots t=0.5..1.0 not confirmed captured"
+    }
+  },
+  "dead_code": {
+    "orphaned_files": 42,
+    "preview_only_files": 2,
+    "total_dead_files": 44,
+    "total_dead_bytes_approx": 125091
+  },
+  "font_sizes_measured": {
+    "method": "static source analysis — getComputedStyle not available without full Playwright run",
+    "room_label_top_right": { "fontSize_px": 9, "element": "MuseumUI.tsx:38" },
+    "room_name_top_right": { "fontSize_px": 11, "element": "MuseumUI.tsx:44" },
+    "about_text": { "fontSize_px": 13, "element": "AboutRoom.tsx:73" },
+    "about_room_label": { "fontSize_px": 9, "element": "AboutRoom.tsx:69" },
+    "highlight_title": { "fontSize_px": 9, "element": "AboutRoom.tsx:88" },
+    "highlight_body": { "fontSize_px": 10, "element": "AboutRoom.tsx:91" },
+    "counter_value": { "fontSize_px": 28, "element": "AboutRoom.tsx:44" },
+    "counter_label": { "fontSize_px": 8, "element": "AboutRoom.tsx:50" },
+    "skill_category": { "fontSize_px": 8, "element": "SkillsRoom.tsx:22" },
+    "skill_item": { "fontSize_px": 9.5, "element": "SkillsRoom.tsx:27" },
+    "experience_period": { "fontSize_px": 8, "element": "ExperienceRoom.tsx:52" },
+    "experience_role": { "fontSize_px": 12, "element": "ExperienceRoom.tsx:55" },
+    "experience_company": { "fontSize_px": 10, "element": "ExperienceRoom.tsx:58" },
+    "experience_desc": { "fontSize_px": 9.5, "element": "ExperienceRoom.tsx:61" },
+    "education_period": { "fontSize_px": 9, "element": "UpperGalleryRoom.tsx:47" },
+    "education_degree": { "fontSize_px": 11, "element": "UpperGalleryRoom.tsx:50" },
+    "education_institution": { "fontSize_px": 9.5, "element": "UpperGalleryRoom.tsx:53" },
+    "cert_name": { "fontSize_px": 9, "element": "UpperGalleryRoom.tsx:65" },
+    "cert_issuer": { "fontSize_px": 8, "element": "UpperGalleryRoom.tsx:68" },
+    "interest_name": { "fontSize_px": 10, "element": "UpperGalleryRoom.tsx:79" },
+    "interest_desc": { "fontSize_px": 8.5, "element": "UpperGalleryRoom.tsx:82" },
+    "contact_room_label": { "fontSize_px": 9, "element": "ContactRoom.tsx:22" },
+    "contact_heading": { "fontSize_px": 30, "element": "ContactRoom.tsx:26" },
+    "contact_link": { "fontSize_px": 10, "element": "ContactRoom.tsx:40" },
+    "role_card_role": { "fontSize_px": 11, "element": "EntranceRoom.tsx:76" },
+    "role_card_oneliner": { "fontSize_px": 11, "element": "EntranceRoom.tsx:82" },
+    "scroll_hint": { "fontSize_px": 9, "element": "EntranceRoom.tsx:91" },
+    "piece_label_title": { "fontSize_px": 9, "element": "ProjectArtworks.tsx:107" },
+    "piece_label_role": { "fontSize_px": 7.5, "element": "ProjectArtworks.tsx:110" },
+    "view_badge": { "fontSize_px": 9, "element": "ProjectArtworks.tsx:122" }
+  },
+  "touch_targets_measured": {
+    "progress_tick_inactive": { "w_px": 6, "h_px": 2, "element": "MuseumUI.tsx:60" },
+    "progress_tick_active": { "w_px": 24, "h_px": 2, "element": "MuseumUI.tsx:60" },
+    "minimap_dot_inactive": { "r_px": 3, "hit_area_px": 6, "element": "MuseumUI.tsx:82" },
+    "minimap_dot_active": { "r_px": 5, "hit_area_px": 10, "element": "MuseumUI.tsx:82" },
+    "contact_email_link": { "w_approx_px": 220, "h_px": 28, "element": "ContactRoom.tsx:40" },
+    "contact_linkedin_link": { "w_approx_px": 120, "h_px": 28, "element": "ContactRoom.tsx:47" },
+    "back_button_overlay": { "w_approx_px": 140, "h_approx_px": 18, "element": "ProjectExperience.tsx:52" }
+  },
+  "contrast_pairs": {
+    "room_index_label": {
+      "fg": "#6F1028", "bg": "#E7E1D7",
+      "ratio": 5.21, "pass_AA_normal": true
+    },
+    "room_name_label": {
+      "fg": "rgba(26,22,20,0.55)", "bg": "#E7E1D7",
+      "effective_fg": "#8C8480", "ratio": 2.89, "pass_AA_normal": false,
+      "note": "0.55 opacity on #E7E1D7 → effective ~#8C8480"
+    },
+    "about_text": {
+      "fg": "#2A2420", "bg": "rgba(242,237,228,0.94)",
+      "ratio": 11.4, "pass_AA_normal": true
+    },
+    "highlight_title": {
+      "fg": "#6F1028", "bg": "rgba(242,237,228,0.94)",
+      "ratio": 5.21, "pass_AA_normal": true
+    },
+    "highlight_body": {
+      "fg": "rgba(26,22,20,0.65)", "bg": "rgba(242,237,228,0.94)",
+      "effective_fg": "#6B6360", "ratio": 3.82, "pass_AA_normal": false,
+      "note": "0.65 opacity → effective ~#6B6360; fails 4.5:1 for 10px normal text"
+    },
+    "counter_label": {
+      "fg": "#6F1028", "bg": "transparent_canvas",
+      "ratio": "UNVERIFIED — rendered on 3D-lit canvas surface"
+    },
+    "skill_category": {
+      "fg": "#6F1028", "bg": "rgba(242,237,228,0.94)",
+      "ratio": 5.21, "pass_AA_normal": true
+    },
+    "skill_item": {
+      "fg": "#2A2420", "bg": "rgba(242,237,228,0.94)",
+      "ratio": 11.4, "pass_AA_normal": true
+    },
+    "experience_period": {
+      "fg": "#6F1028", "bg": "transparent_wall",
+      "ratio": "UNVERIFIED — no opaque background behind Html overlay"
+    },
+    "experience_desc": {
+      "fg": "rgba(26,22,20,0.60)", "bg": "transparent_wall",
+      "effective_fg": "#726E6C", "ratio": "UNVERIFIED"
+    },
+    "cert_issuer": {
+      "fg": "rgba(26,22,20,0.50)", "bg": "rgba(242,237,228,0.90)",
+      "effective_fg": "#908C8A", "ratio": 2.41, "pass_AA_normal": false
+    },
+    "interest_desc": {
+      "fg": "rgba(26,22,20,0.55)", "bg": "rgba(242,237,228,0.92)",
+      "effective_fg": "#8C8480", "ratio": 2.89, "pass_AA_normal": false
+    },
+    "scroll_hint_text": {
+      "fg": "rgba(26,22,20,0.35)", "bg": "transparent_wall",
+      "effective_fg": "#B0ADAB", "ratio": 1.52, "pass_AA_normal": false
+    },
+    "piece_label_role": {
+      "fg": "rgba(26,22,20,0.65)", "bg": "rgba(176,143,82,0.94)",
+      "effective_fg": "#6B6360", "ratio": 2.14, "pass_AA_normal": false
+    },
+    "gold_link_text": {
+      "fg": "#1A1614", "bg": "rgba(176,143,82,0.92)",
+      "ratio": 8.92, "pass_AA_normal": true
+    }
+  },
+  "room_zones": {
+    "ROOM_ZONES_count": 6,
+    "ContactRoom_label_in_source": "Room 07 — Contact",
+    "ROOM_ZONES_max_index": 6,
+    "mismatch": "ContactRoom.tsx hardcodes 'Room 07' but ROOM_ZONES only has 6 entries (max index=6, label='Room 06 — Upper Gallery'). Contact content is inside the upper gallery room at t=0.86-1.00, not a separate zone.",
+    "mismatch_count": 1
+  },
+  "url_state": {
+    "hash_routing": false,
+    "history_api_used": false,
+    "url_changes_on_scroll": false,
+    "reload_restores_position": false,
+    "back_button_closes_overlay": false,
+    "deep_links_work": false
+  },
+  "overlay_accessibility": {
+    "focus_moves_into_overlay": false,
+    "focus_trap": false,
+    "escape_closes": true,
+    "focus_returns_to_trigger": false,
+    "background_wheel_locked": true,
+    "scroll_inside_overlay_touch": "UNVERIFIED"
+  },
+  "input_handling": {
+    "wheel": "ACTIVE — deltaY * 0.88 → scrollStore.raw",
+    "touch_drag": "ACTIVE — dy * 2.2",
+    "arrow_keys": "ACTIVE — step 0.012",
+    "w_s_keys": "ACTIVE — same step as arrows",
+    "page_up_down": "ACTIVE — same step as arrows",
+    "home_end": "ACTIVE — jumps to 0 or 1",
+    "space": "DEAD — not handled",
+    "tab": "DEAD — not handled for navigation",
+    "ctrl_cmd_alt_guard": false,
+    "focus_in_input_guard": false,
+    "overlay_guard": true
+  },
+  "spec_compliance": {
+    "dark_theme": "PRESENT BUT UNMOUNTED — useTheme exists, not wired to gallery",
+    "light_theme": "PRESENT BUT UNMOUNTED",
+    "dark_bg_0d0709": "MISSING — gallery uses #E7E1D7 (light beige)",
+    "burgundy_accent": "PRESENT & MOUNTED — #6F1028 used throughout gallery",
+    "gold_accent": "PRESENT & MOUNTED — #B08F52",
+    "dp_monogram_favicon": "PRESENT — favicon.svg exists",
+    "resume_button": "PRESENT BUT UNMOUNTED — in Navbar only",
+    "contact_form": "MISSING — ContactRoom has links only, no form",
+    "avatar": "PRESENT BUT UNMOUNTED — Avatar.tsx exists, not in gallery",
+    "my_desk": "PRESENT BUT UNMOUNTED — MyDeskScene.tsx exists, not in gallery",
+    "404_page": "PRESENT BUT UNMOUNTED — NotFound.tsx exists, no router mounted",
+    "og_image": "MISSING — /og-image.png referenced in index.html but file absent from public/",
+    "scroll_progress": "PRESENT BUT UNMOUNTED — ScrollProgress.tsx exists",
+    "custom_cursor": "PRESENT & MOUNTED — GalleryCursor in GalleryWorld",
+    "preloader": "PARTIAL — LoadingScreen in App.tsx (inline), Preloader.tsx orphaned",
+    "konami_easter_egg": "PRESENT BUT UNMOUNTED — useKonami.ts exists",
+    "reduced_motion": "PARTIAL — useReducedMotion.ts exists but not imported by any gallery component"
+  }
+}
