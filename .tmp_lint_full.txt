@@ -1,0 +1,260 @@
+﻿
+> durva-pawar-3d-portfolio@1.0.0 lint
+> oxlint
+
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/SkillSphere.tsx:36:28]
+ 35 |     for (let i = shuffled.length - 1; i > 0; i--) {
+ 36 |       const j = Math.floor(Math.random() * (i + 1));
+    :                            ^^^^^^|^^^^^^
+    :                                  `-- Cannot call impure function
+ 37 |       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! eslint(no-unused-vars): Identifier 'ARTWORKS' is imported but never used.
+    ,-[src/gallery/constants.ts:20:3]
+ 19 | import {
+ 20 |   ARTWORKS, SHOTS, artworkById, type ArtworkMount, type RoomZone,
+    :   ^^^^|^^^
+    :       `-- 'ARTWORKS' is imported here
+ 21 | } from './layout';
+    `----
+  help: Consider removing this import.
+
+  ! eslint(no-unused-vars): Type 'RoomZone' is imported but never used.
+    ,-[src/gallery/constants.ts:20:57]
+ 19 | import {
+ 20 |   ARTWORKS, SHOTS, artworkById, type ArtworkMount, type RoomZone,
+    :                                                         ^^^^|^^^
+    :                                                             `-- 'RoomZone' is imported here
+ 21 | } from './layout';
+    `----
+  help: Consider removing this import.
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/ParticleStarfield.tsx:17:21]
+ 16 |     for (let i = 0; i < count; i++) {
+ 17 |       const r = 8 + Math.random() * 12;
+    :                     ^^^^^^|^^^^^^
+    :                           `-- Cannot call impure function
+ 18 |       const theta = Math.random() * Math.PI * 2;
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/ParticleStarfield.tsx:18:21]
+ 17 |       const r = 8 + Math.random() * 12;
+ 18 |       const theta = Math.random() * Math.PI * 2;
+    :                     ^^^^^^|^^^^^^
+    :                           `-- Cannot call impure function
+ 19 |       const phi = Math.acos(2 * Math.random() - 1);
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/ParticleStarfield.tsx:19:33]
+ 18 |       const theta = Math.random() * Math.PI * 2;
+ 19 |       const phi = Math.acos(2 * Math.random() - 1);
+    :                                 ^^^^^^|^^^^^^
+    :                                       `-- Cannot call impure function
+ 20 |       pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/ParticleStarfield.tsx:23:17]
+ 22 |       pos[i * 3 + 2] = r * Math.cos(phi);
+ 23 |       const c = Math.random() > 0.5 ? c1 : c2;
+    :                 ^^^^^^|^^^^^^
+    :                       `-- Cannot call impure function
+ 24 |       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! eslint(no-unused-vars): Variable 'POS_LAMBDA' is declared but never used. Unused variables should start with a '_'.
+    ,-[src/gallery/CameraController.tsx:23:7]
+ 22 | /** How fast the dolly catches the target position. */
+ 23 | const POS_LAMBDA = 6;
+    :       ^^^^^|^^^^
+    :            `-- 'POS_LAMBDA' is declared here
+ 24 | 
+    `----
+  help: Consider removing this declaration.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/hooks/useSmoothScroll.ts:16:5]
+  8 | 
+  9 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 10 |     const lenisInstance = new Lenis({
+ 11 |       smoothWheel: true,
+ 12 |       syncTouch: true,
+ 13 |     });
+ 14 | 
+ 15 |     lenisRef.current = lenisInstance;
+ 16 |     setLenis(lenisInstance);
+    :     ^^^^|^^^
+    :         `-- Avoid calling setState() directly within an effect
+ 17 | 
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! eslint(no-unused-vars): Identifier 'useState' is imported but never used.
+   ,-[src/three/Hero3DScene.tsx:1:27]
+ 1 | import { useRef, useMemo, useState, useEffect } from 'react';
+   :                           ^^^^|^^^
+   :                               `-- 'useState' is imported here
+ 2 | import { useFrame, useThree } from '@react-three/fiber';
+   `----
+  help: Consider removing this import.
+
+  ! react(only-export-components): Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components.
+    ,-[src/three/Hero3DScene.tsx:12:17]
+ 11 | 
+ 12 | export function useSectionHue() {
+    :                 ^^^^^^^^^^^^^
+ 13 |   const t = getScrollProgress();
+    `----
+
+  ! react(purity): Cannot call impure function during render
+     ,-[src/three/Hero3DScene.tsx:105:29]
+ 104 |       {nodePositions.map((pos, i) => {
+ 105 |         const size = 0.06 + Math.random() * 0.02;
+     :                             ^^^^^^|^^^^^^
+     :                                   `-- Cannot call impure function
+ 106 |         return (
+     `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/components/ui/SpeechBubble.tsx:10:5]
+  8 | 
+  9 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 10 |     setDisplayed('');
+    :     ^^^^^^|^^^^^
+    :           `-- Avoid calling setState() directly within an effect
+ 11 |     let i = 0;
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/hooks/useActiveSection.ts:35:5]
+ 27 | 
+ 28 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 29 |     const map: Record<string, HTMLElement | null> = {};
+ 30 |     sectionIds.forEach((id) => {
+ 31 |       map[id] = document.getElementById(id);
+ 32 |       visibilityMap.current[id] = 0;
+ 33 |     });
+ 34 |     sectionRefsRef.current = map;
+ 35 |     setSectionRefsMap(map);
+    :     ^^^^^^^^|^^^^^^^^
+    :             `-- Avoid calling setState() directly within an effect
+ 36 | 
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+     ,-[src/gallery/artworkTextures.ts:355:7]
+ 352 |   const [tex, setTex] = useState<THREE.CanvasTexture | null>(() => texCache.get(id) ?? null);
+ 353 |   useEffect(() => {
+     :   ^^^^|^^^^
+     :       `-- This is the containing effect
+ 354 |     if (texCache.has(id)) {
+ 355 |       setTex(texCache.get(id)!);
+     :       ^^^|^^
+     :          `-- Avoid calling setState() directly within an effect
+ 356 |       return;
+     `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! eslint(no-unused-vars): Identifier 'useRef' is imported but never used.
+    ,-[src/gallery/assets/HeroArch.tsx:39:19]
+ 38 | 
+ 39 | import { useMemo, useRef, useState } from 'react';
+    :                   ^^^|^^
+    :                      `-- 'useRef' is imported here
+ 40 | import { Canvas, useFrame }          from '@react-three/fiber';
+    `----
+  help: Consider removing this import.
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/gallery/ProjectExperience.tsx:44:7]
+ 41 | 
+ 42 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 43 |     if (install) {
+ 44 |       setVisible(true);
+    :       ^^^^^|^^^^
+    :            `-- Avoid calling setState() directly within an effect
+ 45 |       requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  ! eslint(no-unused-vars): Identifier 'Html' is imported but never used.
+   ,-[src/three/Avatar.tsx:3:19]
+ 2 | import { useFrame, useThree } from '@react-three/fiber';
+ 3 | import { useGLTF, Html } from '@react-three/drei';
+   :                   ^^|^
+   :                     `-- 'Html' is imported here
+ 4 | import * as THREE from 'three';
+   `----
+  help: Consider removing this import.
+
+  ! react(purity): Cannot call impure function during render
+    ,-[src/three/Avatar.tsx:59:35]
+ 58 |   const jumpTimeRef = useRef(0);
+ 59 |   const nextBlinkRef = useRef(3 + Math.random() * 2);
+    :                                   ^^^^^^|^^^^^^
+    :                                         `-- Cannot call impure function
+ 60 |   const blinkDurationRef = useRef(0);
+    `----
+  help: `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component re-renders
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/purity
+
+  ! react(set-state-in-effect): Calling setState synchronously within an effect can trigger cascading renders
+    ,-[src/three/Avatar.tsx:76:7]
+ 73 | 
+ 74 |   useEffect(() => {
+    :   ^^^^|^^^^
+    :       `-- This is the containing effect
+ 75 |     if (pose === 'wave') {
+ 76 |       setIsWaving(true);
+    :       ^^^^^|^^^^^
+    :            `-- Avoid calling setState() directly within an effect
+ 77 |     }
+    `----
+  help: Effects should synchronize React with external systems. Calling setState synchronously inside an effect starts another render and is usually unnecessary. Derive the value during render, initialize state directly, or update it from the event that caused the change. Use an effect only when synchronizing with an external system.
+  note: React Compiler skipped optimizing this component or hook. Additional guidance: https://react.dev/reference/eslint-plugin-react-hooks/lints/set-state-in-effect
+
+  x react-hooks(rules-of-hooks): React Hook "useGLTF" is called conditionally. React Hooks must be called in the exact same order in every component render.
+     ,-[src/three/Avatar.tsx:429:18]
+ 428 |   try {
+ 429 |     const gltf = useGLTF('/models/durva.glb');
+     :                  ^^^^^^^^^^^^^^|^^^^^^^^^^^^^
+     :                                `-- This Hook call is not reachable on every render path.
+ 430 |     if (gltf && !glbLoaded) {
+     `----
+  help: Move the Hook call before the condition, or call it unconditionally and branch inside the Hook/effect instead.
+
+Found 20 warnings and 1 error.
+Finished in 143ms on 72 files with 116 rules using 4 threads.

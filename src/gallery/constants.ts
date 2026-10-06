@@ -16,9 +16,7 @@ import {
   hero, about, skills, experience,
   projects, education, certifications, contact, personal,
 } from '@/data';
-import {
-  ARTWORKS, SHOTS, artworkById, type ArtworkMount, type RoomZone,
-} from './layout';
+import { SHOTS, artworkById, type ArtworkMount } from './layout';
 
 // ─── Re-export the content layer (unchanged; src/data is never edited) ───────
 export { hero, about, skills, experience, projects, education, certifications, contact, personal };

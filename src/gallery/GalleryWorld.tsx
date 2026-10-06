@@ -17,7 +17,8 @@ import {
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
-  ARTWORKS, BG_COLOR, CAM, SCROLL_TOTAL, cursorStore, scrollStore, type InstallDef,
+  ARTWORKS, INSTALLS, BG_COLOR, CAM, SCROLL_TOTAL, cursorStore, scrollStore, type InstallDef,
+  ZONE_HASH, zoneForHash, zoneForProgress,
 } from './constants';
 import { warmArtworkTextures, readyTextureIds } from './artworkTextures';
 import GalleryArchitecture from './GalleryArchitecture';
@@ -32,6 +33,7 @@ import ExperienceRoom      from './rooms/ExperienceRoom';
 import UpperGalleryRoom    from './rooms/UpperGalleryRoom';
 import ContactRoom         from './rooms/ContactRoom';
 import MuseumUI            from './ui/MuseumUI';
+import GalleryNav          from './ui/GalleryNav';
 
 // ─── Scroll / pointer / keyboard input → mutable store, zero re-renders ──────
 function useGalleryInput() {
@@ -96,6 +98,59 @@ function useGalleryInput() {
       window.removeEventListener('mousemove', onMove);
     };
   }, []);
+}
+
+// ─── Hash routing ────────────────────────────────────────────────────────────
+/**
+ * On mount: if the URL has a recognised hash, jump the camera there.
+ * Returns helpers used by handleSelect / handleReturn.
+ */
+function useHashRouting(
+  onRoomJump: (t: number) => void,
+  setShowCase: (v: boolean) => void,
+  setActiveInstall: (v: InstallDef | null) => void,
+  installs: InstallDef[],
+) {
+  // On mount — read initial hash.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    // #works/<slug> → open overlay
+    const worksMatch = hash.match(/^#works\/(.+)$/);
+    if (worksMatch) {
+      const slug = worksMatch[1];
+      const def = installs.find(i => i.slug === slug);
+      if (def) {
+        // Jump camera to works zone first, then open overlay.
+        const worksZone = zoneForHash('#works');
+        if (worksZone) onRoomJump((worksZone.tRange[0] + worksZone.tRange[1]) / 2);
+        scrollStore.locked = true;
+        cursorStore.view = false;
+        setActiveInstall(def);
+        setShowCase(true);
+      }
+      return;
+    }
+    const zone = zoneForHash(hash);
+    if (zone) onRoomJump((zone.tRange[0] + zone.tRange[1]) / 2);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // popstate — Back button while overlay is open should close it.
+  useEffect(() => {
+    const onPop = () => {
+      // If the new hash is NOT a works/<slug>, close the overlay.
+      if (!window.location.hash.startsWith('#works/')) {
+        setShowCase(false);
+        setTimeout(() => {
+          setActiveInstall(null);
+          scrollStore.locked = false;
+        }, 550);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [setShowCase, setActiveInstall]);
 }
 
 // ─── ?t=0..1 debug hook (PART C.2) ──────────────────────────────────────────
@@ -206,11 +261,18 @@ export default function GalleryWorld() {
   const [activeInstall, setActiveInstall] = useState<InstallDef | null>(null);
   const [showCase, setShowCase] = useState(false);
 
+  const handleRoomJump = useCallback((t: number) => {
+    scrollStore.testT = null;
+    scrollStore.raw = t * SCROLL_TOTAL;
+    scrollStore.progress = t;
+  }, []);
+
   const handleSelect = useCallback((def: InstallDef) => {
     scrollStore.locked = true;
     cursorStore.view = false;
     setActiveInstall(def);
     setShowCase(true);
+    history.pushState(null, '', `#works/${def.slug}`);
   }, []);
 
   const handleReturn = useCallback(() => {
@@ -219,13 +281,23 @@ export default function GalleryWorld() {
       setActiveInstall(null);
       scrollStore.locked = false;
     }, 550);
+    // Only go back if the current entry is a works/<slug> hash.
+    if (window.location.hash.startsWith('#works/')) history.back();
   }, []);
 
-  const handleRoomJump = useCallback((t: number) => {
-    scrollStore.testT = null;
-    scrollStore.raw = t * SCROLL_TOTAL;
-    scrollStore.progress = t;
-  }, []);
+  useHashRouting(handleRoomJump, setShowCase, setActiveInstall, INSTALLS);
+
+  // Debounced replaceState — update hash as the camera moves between zones.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const zone = zoneForProgress(uiProgress);
+      const hash = ZONE_HASH[zone.id];
+      if (hash && !window.location.hash.startsWith('#works/')) {
+        history.replaceState(null, '', hash);
+      }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [uiProgress]);
 
   const canvasStyle: CSSProperties = {
     position: 'fixed', inset: 0,
@@ -268,6 +340,7 @@ export default function GalleryWorld() {
         <CameraController />
       </Canvas>
 
+      <GalleryNav progress={uiProgress} onRoomJump={handleRoomJump} overlayOpen={showCase} />
       <GalleryCursor />
       <MuseumUI progress={uiProgress} onRoomJump={handleRoomJump} />
 
